@@ -1,0 +1,1 @@
+- Default output from CLI commands should never be more than 2-3 lines
