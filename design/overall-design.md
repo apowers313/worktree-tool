@@ -419,6 +419,46 @@ class ConfigError extends WorktreeError {}
 - Suggested fixes
 - Relevant documentation links
 
+## Output Guidelines
+
+### Conciseness Principle
+- **Default output**: Commands should produce minimal output (2-3 lines maximum)
+- **Success messages**: Single line confirmation with essential information
+- **Verbose mode**: Detailed output only when `--verbose` flag is used
+- **Error messages**: Clear, actionable, and concise
+
+### Output Examples
+```bash
+# Init command (default)
+$ wtt init
+Initialized worktree project. Config: .worktree-config.json
+
+# Init command (verbose)
+$ wtt init --verbose
+Checking git repository...
+Detecting project name: myproject
+Detecting main branch: main
+Creating configuration file...
+Updating .gitignore...
+Repository initialized with:
+  Project name: myproject
+  Main branch:  main
+  Worktree dir: .worktrees/
+  Tmux support: enabled
+
+# Create command (default)
+$ wtt create --name feature-xyz
+Created worktree: feature-xyz
+
+# Create command (verbose)
+$ wtt create --name feature-xyz --verbose
+Loading configuration...
+Creating git worktree at .worktrees/feature-xyz
+Creating branch: feature-xyz
+Setting up tmux window...
+Worktree created successfully
+```
+
 ## Implementation Phases
 
 ### Phase 1: Foundation

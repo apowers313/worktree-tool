@@ -348,6 +348,22 @@ interface CreateOptions {
 - Colored output with chalk
 - Verbosity levels (quiet, normal, verbose)
 - Progress indicators for long operations
+- **Concise output by default** (2-3 lines max)
+- Detailed output only in verbose mode
+
+**Output requirements:**
+```typescript
+// Default mode - minimal output
+logger.success('Initialized worktree project. Config: .worktree-config.json');
+
+// Verbose mode - detailed output
+if (verbose) {
+  logger.info('Repository initialized with:');
+  logger.log(`  Project name: ${projectName}`);
+  logger.log(`  Main branch:  ${mainBranch}`);
+  // etc...
+}
+```
 
 ### Step 5.3: Add End-to-End Tests
 **Files to create:**

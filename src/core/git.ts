@@ -26,13 +26,37 @@ export class Git {
 
   /**
    * Get the main branch name by checking common names
-   * Works even in a new repo with no commits
+   * Works even in a newly initialized repo with no commits
    */
   async getMainBranch(): Promise<string> {
     try {
       // Get all branches
       const branches = await this.git.branch();
       const branchNames = branches.all;
+      
+      // If no branches exist (no commits), try to get the default branch
+      if (branchNames.length === 0) {
+        try {
+          // Get the current HEAD reference (works even without commits)
+          const headRef = await this.git.raw(['symbolic-ref', 'HEAD']);
+          const match = headRef.match(/^refs\/heads\/(.+)/);
+          if (match && match[1]) {
+            return match[1].trim();
+          }
+        } catch {
+          // If symbolic-ref fails, try to get default from config
+          try {
+            const defaultBranch = await this.git.raw(['config', '--get', 'init.defaultBranch']);
+            if (defaultBranch.trim()) {
+              return defaultBranch.trim();
+            }
+          } catch {
+            // No config, use 'main' as fallback
+          }
+          // Default to 'main' if nothing else works
+          return 'main';
+        }
+      }
       
       // Check for common main branch names in order of preference
       const commonMainBranches = ['main', 'master', 'trunk', 'development'];

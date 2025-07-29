@@ -118,13 +118,53 @@ describe('Git Wrapper', () => {
       expect(mockGit.raw).toHaveBeenCalledWith(['config', '--get', 'init.defaultBranch']);
     });
 
-    it('should default to "main" when no branches and no config', async () => {
+    it('should detect default branch when no commits exist', async () => {
       mockGit.status.mockResolvedValue({ current: null });
       mockGit.branch.mockResolvedValue({
         all: [],
         current: null
       });
-      mockGit.raw.mockRejectedValue(new Error('Config not found'));
+      mockGit.raw.mockImplementation((args: string[]) => {
+        if (args[0] === 'symbolic-ref' && args[1] === 'HEAD') {
+          return Promise.resolve('refs/heads/master\n');
+        }
+        return Promise.reject(new Error('Command not found'));
+      });
+      
+      const result = await git.getMainBranch();
+      
+      expect(result).toBe('master');
+      expect(mockGit.raw).toHaveBeenCalledWith(['symbolic-ref', 'HEAD']);
+    });
+
+    it('should fall back to config when symbolic-ref fails', async () => {
+      mockGit.status.mockResolvedValue({ current: null });
+      mockGit.branch.mockResolvedValue({
+        all: [],
+        current: null
+      });
+      mockGit.raw.mockImplementation((args: string[]) => {
+        if (args[0] === 'symbolic-ref' && args[1] === 'HEAD') {
+          return Promise.reject(new Error('Not a symbolic ref'));
+        }
+        if (args[0] === 'config' && args[1] === '--get' && args[2] === 'init.defaultBranch') {
+          return Promise.resolve('main\n');
+        }
+        return Promise.reject(new Error('Command not found'));
+      });
+      
+      const result = await git.getMainBranch();
+      
+      expect(result).toBe('main');
+    });
+
+    it('should default to main when no branch info available', async () => {
+      mockGit.status.mockResolvedValue({ current: null });
+      mockGit.branch.mockResolvedValue({
+        all: [],
+        current: null
+      });
+      mockGit.raw.mockRejectedValue(new Error('Command failed'));
       
       const result = await git.getMainBranch();
       
