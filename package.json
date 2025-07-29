@@ -1,5 +1,5 @@
 {
-  "name": "wtt",
+  "name": "worktree-tool",
   "version": "0.1.0",
   "description": "Git worktree management tool",
   "main": "dist/index.js",
