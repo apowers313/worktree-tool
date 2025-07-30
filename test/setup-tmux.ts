@@ -1,8 +1,9 @@
-// Test setup file for Jest
-// This file runs before each test suite
+// Test setup file for tmux tests
+// This file runs before tmux integration tests
 
-// Disable tmux during all tests to prevent session leaks
-process.env['WTT_DISABLE_TMUX'] = 'true';
+// Enable tmux for these tests
+process.env['WTT_TEST_TMUX'] = 'true';
+delete process.env['WTT_DISABLE_TMUX'];
 
 // Ensure tests run in isolation
 beforeEach(() => {
@@ -26,11 +27,3 @@ afterAll(() => {
   console.warn = originalConsole.warn;
   console.info = originalConsole.info;
 });
-
-// Export test console for tests that need to verify console output
-export const testConsole = {
-  getLogCalls: () => (console.log as jest.Mock).mock.calls,
-  getErrorCalls: () => (console.error as jest.Mock).mock.calls,
-  getWarnCalls: () => (console.warn as jest.Mock).mock.calls,
-  getInfoCalls: () => (console.info as jest.Mock).mock.calls,
-};

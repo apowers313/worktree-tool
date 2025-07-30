@@ -1,6 +1,7 @@
 import { promises as fs } from 'fs';
 import * as path from 'path';
 import * as os from 'os';
+import { execSync, ExecSyncOptions } from 'child_process';
 
 /**
  * Ensure tests run in an isolated environment
@@ -39,9 +40,23 @@ export async function withCleanEnvironment<T>(
   fn: () => Promise<T>
 ): Promise<T> {
   const isolation = await ensureTestIsolation();
+  
+  // Save original environment
+  const originalEnv = process.env['WTT_DISABLE_TMUX'];
+  
   try {
+    // Disable tmux for tests unless explicitly testing tmux
+    if (!process.env['WTT_TEST_TMUX']) {
+      process.env['WTT_DISABLE_TMUX'] = 'true';
+    }
     return await fn();
   } finally {
+    // Restore original environment
+    if (originalEnv !== undefined) {
+      process.env['WTT_DISABLE_TMUX'] = originalEnv;
+    } else {
+      delete process.env['WTT_DISABLE_TMUX'];
+    }
     await isolation.cleanup();
   }
 }
@@ -79,4 +94,19 @@ export async function ensureNotInWorktree(): Promise<void> {
     
     currentDir = parentDir;
   }
+}
+
+/**
+ * Execute a command with tmux disabled
+ */
+export function execSyncWithoutTmux(command: string, options?: ExecSyncOptions): Buffer | string {
+  const env = {
+    ...process.env,
+    WTT_DISABLE_TMUX: 'true'
+  };
+  
+  return execSync(command, {
+    ...options,
+    env
+  });
 }

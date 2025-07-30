@@ -85,6 +85,18 @@ export class Git {
   }
 
   /**
+   * Check if the repository has any commits
+   */
+  async hasCommits(): Promise<boolean> {
+    try {
+      await this.git.raw(['rev-parse', 'HEAD']);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
    * Create a new worktree
    */
   async createWorktree(path: string, branch: string): Promise<void> {

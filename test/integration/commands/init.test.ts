@@ -1,14 +1,14 @@
 import { promises as fs } from 'fs';
 import * as path from 'path';
-import { execSync } from 'child_process';
 import { 
-  withCleanEnvironment,
-  ensureNotInWorktree 
+  ensureNotInWorktree,
+  execSyncWithoutTmux
 } from '../../helpers/isolation';
 import { 
-  createTestRepo,
-  createTestRepoWithCommit,
-  createTestRepoWithBranches
+  withTestSandbox,
+  createIsolatedTestRepo,
+  createIsolatedTestRepoWithCommit,
+  createIsolatedTestRepoWithBranches
 } from '../../helpers/git';
 import { simpleGit } from 'simple-git';
 
@@ -16,6 +16,9 @@ import { simpleGit } from 'simple-git';
 const WTT_BIN = path.resolve(__dirname, '../../../dist/index.js');
 
 describe('Init Command Integration Tests', () => {
+  // Increase timeout for integration tests
+  jest.setTimeout(30000);
+  
   // Ensure tests are not running in a worktree
   beforeAll(async () => {
     await ensureNotInWorktree();
@@ -23,10 +26,13 @@ describe('Init Command Integration Tests', () => {
 
   describe('Basic Initialization', () => {
     it('should fail in non-git directory', async () => {
-      await withCleanEnvironment(async () => {
+      await withTestSandbox(async (sandbox) => {
+        // Change to workspace (non-git directory)
+        process.chdir(sandbox.getWorkspacePath());
+        
         // Try to run init in a non-git directory
         expect(() => {
-          execSync(`node "${WTT_BIN}" init`, { 
+          execSyncWithoutTmux(`node "${WTT_BIN}" init`, { 
             encoding: 'utf-8',
             stdio: 'pipe'
           });
@@ -34,7 +40,7 @@ describe('Init Command Integration Tests', () => {
         
         // Verify error message
         try {
-          execSync(`node "${WTT_BIN}" init`, { 
+          execSyncWithoutTmux(`node "${WTT_BIN}" init`, { 
             encoding: 'utf-8',
             stdio: 'pipe'
           });
@@ -45,15 +51,15 @@ describe('Init Command Integration Tests', () => {
     });
 
     it('should succeed in git directory without commits', async () => {
-      await withCleanEnvironment(async () => {
+      await withTestSandbox(async (sandbox) => {
         // Create empty git repo
-        await createTestRepo(process.cwd());
+        const git = await createIsolatedTestRepo(sandbox);
         
-        // Git init automatically sets up HEAD to point to the default branch
-        // No need to set it manually
+        // Change to repo directory
+        process.chdir(git.path);
         
         // Run init - should succeed
-        const output = execSync(`node "${WTT_BIN}" init`, { 
+        const output = execSyncWithoutTmux(`node "${WTT_BIN}" init`, { 
           encoding: 'utf-8'
         });
         
@@ -64,21 +70,27 @@ describe('Init Command Integration Tests', () => {
         const config = JSON.parse(
           await fs.readFile('.worktree-config.json', 'utf-8')
         );
-        // Should be either 'master' or 'main' depending on git config
-        expect(['master', 'main']).toContain(config.mainBranch);
+        // Should be 'main' with sandbox config
+        expect(config.mainBranch).toBe('main');
       });
     });
 
     it('should detect master branch in empty repo', async () => {
-      await withCleanEnvironment(async () => {
-        const git = simpleGit(process.cwd());
+      await withTestSandbox(async (sandbox) => {
+        // Create repo with custom branch
+        const repoPath = path.join(sandbox.getWorkspacePath(), 'repo');
+        await fs.mkdir(repoPath, { recursive: true });
+        const git = simpleGit(repoPath);
         await git.init();
         
         // Force HEAD to point to master
         await git.raw(['symbolic-ref', 'HEAD', 'refs/heads/master']);
         
+        // Change to repo directory
+        process.chdir(repoPath);
+        
         // Run init
-        execSync(`node "${WTT_BIN}" init`, { encoding: 'utf-8' });
+        execSyncWithoutTmux(`node "${WTT_BIN}" init --disable-tmux`, { encoding: 'utf-8' });
         
         // Verify detected branch
         const config = JSON.parse(
@@ -89,15 +101,15 @@ describe('Init Command Integration Tests', () => {
     });
 
     it('should detect main branch in empty repo', async () => {
-      await withCleanEnvironment(async () => {
-        const git = simpleGit(process.cwd());
-        await git.init();
+      await withTestSandbox(async (sandbox) => {
+        // Create repo - sandbox defaults to main
+        const git = await createIsolatedTestRepo(sandbox);
         
-        // Force HEAD to point to main
-        await git.raw(['symbolic-ref', 'HEAD', 'refs/heads/main']);
+        // Change to repo directory
+        process.chdir(git.path);
         
         // Run init
-        execSync(`node "${WTT_BIN}" init`, { encoding: 'utf-8' });
+        execSyncWithoutTmux(`node "${WTT_BIN}" init --disable-tmux`, { encoding: 'utf-8' });
         
         // Verify detected branch
         const config = JSON.parse(
@@ -108,12 +120,15 @@ describe('Init Command Integration Tests', () => {
     });
 
     it('should succeed in git directory with commits', async () => {
-      await withCleanEnvironment(async () => {
+      await withTestSandbox(async (sandbox) => {
         // Create git repo with commit
-        await createTestRepoWithCommit(process.cwd());
+        const git = await createIsolatedTestRepoWithCommit(sandbox);
+        
+        // Change to repo directory
+        process.chdir(git.path);
         
         // Run init
-        const output = execSync(`node "${WTT_BIN}" init`, { 
+        const output = execSyncWithoutTmux(`node "${WTT_BIN}" init`, { 
           encoding: 'utf-8' 
         });
         
@@ -121,7 +136,7 @@ describe('Init Command Integration Tests', () => {
         expect(output).toContain('Initialized worktree project. Config: .worktree-config.json');
         
         // Verify config file exists
-        const configPath = path.join(process.cwd(), '.worktree-config.json');
+        const configPath = path.join(git.path, '.worktree-config.json');
         const configExists = await fs.access(configPath).then(() => true).catch(() => false);
         expect(configExists).toBe(true);
         
@@ -130,23 +145,25 @@ describe('Init Command Integration Tests', () => {
         expect(config.version).toBe('1.0.0');
         expect(config.baseDir).toBe('.worktrees');
         expect(config.projectName).toBeTruthy();
-        expect(config.mainBranch).toBeTruthy();
+        expect(config.mainBranch).toBe('main'); // Sandbox defaults to main
         
         // Verify .gitignore
-        const gitignorePath = path.join(process.cwd(), '.gitignore');
+        const gitignorePath = path.join(git.path, '.gitignore');
         const gitignore = await fs.readFile(gitignorePath, 'utf-8');
         expect(gitignore).toContain('.worktrees/');
       });
     });
 
     it('should detect main branch correctly', async () => {
-      await withCleanEnvironment(async () => {
-        // Create repo with 'main' branch
-        const git = await createTestRepoWithCommit(process.cwd());
-        await git.branch(['-M', 'main']);
+      await withTestSandbox(async (sandbox) => {
+        // Create repo - sandbox already defaults to 'main'
+        const git = await createIsolatedTestRepoWithCommit(sandbox);
+        
+        // Change to repo directory
+        process.chdir(git.path);
         
         // Run init
-        execSync(`node "${WTT_BIN}" init`, { encoding: 'utf-8' });
+        execSyncWithoutTmux(`node "${WTT_BIN}" init --disable-tmux`, { encoding: 'utf-8' });
         
         // Verify detected main branch
         const config = JSON.parse(
@@ -157,13 +174,16 @@ describe('Init Command Integration Tests', () => {
     });
 
     it('should detect master branch correctly', async () => {
-      await withCleanEnvironment(async () => {
+      await withTestSandbox(async (sandbox) => {
         // Create repo with 'master' branch
-        const git = await createTestRepoWithCommit(process.cwd());
+        const git = await createIsolatedTestRepoWithCommit(sandbox);
         await git.branch(['-M', 'master']);
         
+        // Change to repo directory
+        process.chdir(git.path);
+        
         // Run init
-        execSync(`node "${WTT_BIN}" init`, { encoding: 'utf-8' });
+        execSyncWithoutTmux(`node "${WTT_BIN}" init --disable-tmux`, { encoding: 'utf-8' });
         
         // Verify detected master branch
         const config = JSON.parse(
@@ -176,11 +196,14 @@ describe('Init Command Integration Tests', () => {
 
   describe('Custom Options', () => {
     it('should accept custom project name', async () => {
-      await withCleanEnvironment(async () => {
-        await createTestRepoWithCommit(process.cwd());
+      await withTestSandbox(async (sandbox) => {
+        const git = await createIsolatedTestRepoWithCommit(sandbox);
+        
+        // Change to repo directory
+        process.chdir(git.path);
         
         // Run init with custom project name
-        execSync(`node "${WTT_BIN}" init --project-name "my-custom-project"`, { 
+        execSyncWithoutTmux(`node "${WTT_BIN}" init --project-name "my-custom-project" --disable-tmux`, { 
           encoding: 'utf-8' 
         });
         
@@ -193,11 +216,14 @@ describe('Init Command Integration Tests', () => {
     });
 
     it('should accept custom base directory', async () => {
-      await withCleanEnvironment(async () => {
-        await createTestRepoWithCommit(process.cwd());
+      await withTestSandbox(async (sandbox) => {
+        const git = await createIsolatedTestRepoWithCommit(sandbox);
+        
+        // Change to repo directory
+        process.chdir(git.path);
         
         // Run init with custom base dir
-        execSync(`node "${WTT_BIN}" init --base-dir ".wt"`, { 
+        execSyncWithoutTmux(`node "${WTT_BIN}" init --base-dir ".wt" --disable-tmux`, { 
           encoding: 'utf-8' 
         });
         
@@ -214,11 +240,14 @@ describe('Init Command Integration Tests', () => {
     });
 
     it('should accept custom main branch', async () => {
-      await withCleanEnvironment(async () => {
-        await createTestRepoWithBranches(process.cwd(), ['develop', 'feature']);
+      await withTestSandbox(async (sandbox) => {
+        const git = await createIsolatedTestRepoWithBranches(sandbox, ['develop', 'feature']);
+        
+        // Change to repo directory
+        process.chdir(git.path);
         
         // Run init with custom main branch
-        execSync(`node "${WTT_BIN}" init --main-branch develop`, { 
+        execSyncWithoutTmux(`node "${WTT_BIN}" init --main-branch develop --disable-tmux`, { 
           encoding: 'utf-8' 
         });
         
@@ -231,11 +260,14 @@ describe('Init Command Integration Tests', () => {
     });
 
     it('should handle tmux options', async () => {
-      await withCleanEnvironment(async () => {
-        await createTestRepoWithCommit(process.cwd());
+      await withTestSandbox(async (sandbox) => {
+        const git = await createIsolatedTestRepoWithCommit(sandbox);
+        
+        // Change to repo directory
+        process.chdir(git.path);
         
         // Test --enable-tmux
-        execSync(`node "${WTT_BIN}" init --enable-tmux`, { 
+        execSyncWithoutTmux(`node "${WTT_BIN}" init --enable-tmux`, { 
           encoding: 'utf-8' 
         });
         
@@ -248,7 +280,7 @@ describe('Init Command Integration Tests', () => {
         await fs.unlink('.worktree-config.json');
         
         // Test --disable-tmux
-        execSync(`node "${WTT_BIN}" init --disable-tmux`, { 
+        execSyncWithoutTmux(`node "${WTT_BIN}" init --disable-tmux`, { 
           encoding: 'utf-8' 
         });
         
@@ -262,15 +294,18 @@ describe('Init Command Integration Tests', () => {
 
   describe('Error Handling', () => {
     it('should fail when already initialized', async () => {
-      await withCleanEnvironment(async () => {
-        await createTestRepoWithCommit(process.cwd());
+      await withTestSandbox(async (sandbox) => {
+        const git = await createIsolatedTestRepoWithCommit(sandbox);
+        
+        // Change to repo directory
+        process.chdir(git.path);
         
         // First init should succeed
-        execSync(`node "${WTT_BIN}" init`, { encoding: 'utf-8' });
+        execSyncWithoutTmux(`node "${WTT_BIN}" init --disable-tmux`, { encoding: 'utf-8' });
         
         // Second init should fail
         expect(() => {
-          execSync(`node "${WTT_BIN}" init`, { 
+          execSyncWithoutTmux(`node "${WTT_BIN}" init`, { 
             encoding: 'utf-8',
             stdio: 'pipe'
           });
@@ -278,7 +313,7 @@ describe('Init Command Integration Tests', () => {
         
         // Verify error message
         try {
-          execSync(`node "${WTT_BIN}" init`, { 
+          execSyncWithoutTmux(`node "${WTT_BIN}" init`, { 
             encoding: 'utf-8',
             stdio: 'pipe'
           });
@@ -289,12 +324,15 @@ describe('Init Command Integration Tests', () => {
     });
 
     it('should reject conflicting tmux options', async () => {
-      await withCleanEnvironment(async () => {
-        await createTestRepoWithCommit(process.cwd());
+      await withTestSandbox(async (sandbox) => {
+        const git = await createIsolatedTestRepoWithCommit(sandbox);
+        
+        // Change to repo directory
+        process.chdir(git.path);
         
         // Try with conflicting options
         expect(() => {
-          execSync(`node "${WTT_BIN}" init --enable-tmux --disable-tmux`, { 
+          execSyncWithoutTmux(`node "${WTT_BIN}" init --enable-tmux --disable-tmux`, { 
             encoding: 'utf-8',
             stdio: 'pipe'
           });
@@ -302,7 +340,7 @@ describe('Init Command Integration Tests', () => {
         
         // Verify error message
         try {
-          execSync(`node "${WTT_BIN}" init --enable-tmux --disable-tmux`, { 
+          execSyncWithoutTmux(`node "${WTT_BIN}" init --enable-tmux --disable-tmux`, { 
             encoding: 'utf-8',
             stdio: 'pipe'
           });
@@ -313,12 +351,15 @@ describe('Init Command Integration Tests', () => {
     });
 
     it('should reject empty option values', async () => {
-      await withCleanEnvironment(async () => {
-        await createTestRepoWithCommit(process.cwd());
+      await withTestSandbox(async (sandbox) => {
+        const git = await createIsolatedTestRepoWithCommit(sandbox);
+        
+        // Change to repo directory
+        process.chdir(git.path);
         
         // Test empty project name
         expect(() => {
-          execSync(`node "${WTT_BIN}" init --project-name ""`, { 
+          execSyncWithoutTmux(`node "${WTT_BIN}" init --project-name ""`, { 
             encoding: 'utf-8',
             stdio: 'pipe'
           });
@@ -326,7 +367,7 @@ describe('Init Command Integration Tests', () => {
         
         // Test empty base dir
         expect(() => {
-          execSync(`node "${WTT_BIN}" init --base-dir ""`, { 
+          execSyncWithoutTmux(`node "${WTT_BIN}" init --base-dir ""`, { 
             encoding: 'utf-8',
             stdio: 'pipe'
           });
@@ -334,7 +375,7 @@ describe('Init Command Integration Tests', () => {
         
         // Test empty main branch
         expect(() => {
-          execSync(`node "${WTT_BIN}" init --main-branch ""`, { 
+          execSyncWithoutTmux(`node "${WTT_BIN}" init --main-branch ""`, { 
             encoding: 'utf-8',
             stdio: 'pipe'
           });
@@ -345,35 +386,37 @@ describe('Init Command Integration Tests', () => {
 
   describe('Self-Hosting Support', () => {
     it('should not interfere with parent wtt repository', async () => {
-      await withCleanEnvironment(async () => {
+      await withTestSandbox(async (sandbox) => {
         // Create parent repo with wtt config
-        await createTestRepoWithCommit(process.cwd());
-        execSync(`node "${WTT_BIN}" init --project-name parent-project`, { 
+        const parentGit = await createIsolatedTestRepoWithCommit(sandbox, 'parent');
+        process.chdir(parentGit.path);
+        
+        execSyncWithoutTmux(`node "${WTT_BIN}" init --project-name parent-project --disable-tmux`, { 
           encoding: 'utf-8' 
         });
         
         // Create nested repo
-        const nestedDir = path.join(process.cwd(), 'nested-project');
+        const nestedDir = path.join(parentGit.path, 'nested-project');
         await fs.mkdir(nestedDir, { recursive: true });
-        process.chdir(nestedDir);
         
         const nestedGit = simpleGit(nestedDir);
         await nestedGit.init();
-        await nestedGit.addConfig('user.email', 'test@example.com');
-        await nestedGit.addConfig('user.name', 'Test User');
         
         const readmePath = path.join(nestedDir, 'README.md');
         await fs.writeFile(readmePath, '# Nested Project\n');
         await nestedGit.add('README.md');
         await nestedGit.commit('Initial commit');
         
+        // Change to nested directory
+        process.chdir(nestedDir);
+        
         // Init nested repo
-        execSync(`node "${WTT_BIN}" init --project-name nested-project`, { 
+        execSyncWithoutTmux(`node "${WTT_BIN}" init --project-name nested-project --disable-tmux`, { 
           encoding: 'utf-8' 
         });
         
         // Verify both configs exist and are different
-        const parentConfigPath = path.join(path.dirname(nestedDir), '.worktree-config.json');
+        const parentConfigPath = path.join(parentGit.path, '.worktree-config.json');
         const nestedConfigPath = path.join(nestedDir, '.worktree-config.json');
         
         const parentConfig = JSON.parse(await fs.readFile(parentConfigPath, 'utf-8'));
@@ -392,9 +435,12 @@ describe('Init Command Integration Tests', () => {
     });
 
     it('should work when wtt is managing its own repository', async () => {
-      await withCleanEnvironment(async () => {
+      await withTestSandbox(async (sandbox) => {
         // Simulate wtt repository
-        await createTestRepoWithCommit(process.cwd());
+        const git = await createIsolatedTestRepoWithCommit(sandbox);
+        
+        // Change to repo directory
+        process.chdir(git.path);
         
         // Create package.json to make it look like wtt
         const packageJson = {
@@ -410,12 +456,11 @@ describe('Init Command Integration Tests', () => {
         );
         
         // Add and commit package.json
-        const git = simpleGit(process.cwd());
         await git.add('package.json');
         await git.commit('Add package.json');
         
         // Init should work fine
-        const output = execSync(`node "${WTT_BIN}" init`, { 
+        const output = execSyncWithoutTmux(`node "${WTT_BIN}" init`, { 
           encoding: 'utf-8' 
         });
         
@@ -432,13 +477,16 @@ describe('Init Command Integration Tests', () => {
 
   describe('Edge Cases', () => {
     it('should handle repositories with many branches', async () => {
-      await withCleanEnvironment(async () => {
+      await withTestSandbox(async (sandbox) => {
         // Create repo with multiple branches
         const branches = ['develop', 'feature/a', 'feature/b', 'hotfix/1'];
-        await createTestRepoWithBranches(process.cwd(), branches);
+        const git = await createIsolatedTestRepoWithBranches(sandbox, branches);
+        
+        // Change to repo directory
+        process.chdir(git.path);
         
         // Init should work
-        const output = execSync(`node "${WTT_BIN}" init`, { 
+        const output = execSyncWithoutTmux(`node "${WTT_BIN}" init`, { 
           encoding: 'utf-8' 
         });
         
@@ -447,14 +495,17 @@ describe('Init Command Integration Tests', () => {
     });
 
     it('should handle special characters in project names', async () => {
-      await withCleanEnvironment(async () => {
-        await createTestRepoWithCommit(process.cwd());
+      await withTestSandbox(async (sandbox) => {
+        const git = await createIsolatedTestRepoWithCommit(sandbox);
+        
+        // Change to repo directory
+        process.chdir(git.path);
         
         // Create directory with special name
         const specialName = 'my-project@2.0';
         
         // Run init with special characters
-        execSync(`node "${WTT_BIN}" init --project-name "${specialName}"`, { 
+        execSyncWithoutTmux(`node "${WTT_BIN}" init --project-name "${specialName}" --disable-tmux`, { 
           encoding: 'utf-8' 
         });
         
@@ -467,15 +518,18 @@ describe('Init Command Integration Tests', () => {
     });
 
     it('should update existing .gitignore', async () => {
-      await withCleanEnvironment(async () => {
-        await createTestRepoWithCommit(process.cwd());
+      await withTestSandbox(async (sandbox) => {
+        const git = await createIsolatedTestRepoWithCommit(sandbox);
+        
+        // Change to repo directory
+        process.chdir(git.path);
         
         // Create existing .gitignore
         const existingContent = 'node_modules/\n*.log\n';
         await fs.writeFile('.gitignore', existingContent);
         
         // Run init
-        execSync(`node "${WTT_BIN}" init`, { encoding: 'utf-8' });
+        execSyncWithoutTmux(`node "${WTT_BIN}" init --disable-tmux`, { encoding: 'utf-8' });
         
         // Verify .gitignore preserved existing content
         const gitignore = await fs.readFile('.gitignore', 'utf-8');
@@ -486,11 +540,14 @@ describe('Init Command Integration Tests', () => {
     });
 
     it('should show detailed output in verbose mode', async () => {
-      await withCleanEnvironment(async () => {
-        await createTestRepoWithCommit(process.cwd());
+      await withTestSandbox(async (sandbox) => {
+        const git = await createIsolatedTestRepoWithCommit(sandbox);
+        
+        // Change to repo directory
+        process.chdir(git.path);
         
         // Run init with verbose flag
-        const output = execSync(`node "${WTT_BIN}" init --verbose`, { 
+        const output = execSyncWithoutTmux(`node "${WTT_BIN}" init --verbose --disable-tmux`, { 
           encoding: 'utf-8' 
         });
         

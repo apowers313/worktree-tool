@@ -100,6 +100,10 @@ describe('Platform Detector', () => {
     });
 
     it('should return true when tmux is found', async () => {
+      // Save and clear the env variable
+      const originalEnv = process.env['WTT_DISABLE_TMUX'];
+      delete process.env['WTT_DISABLE_TMUX'];
+      
       Object.defineProperty(process, 'platform', {
         value: 'linux'
       });
@@ -109,6 +113,11 @@ describe('Platform Detector', () => {
 
       expect(result).toBe(true);
       expect(execSync).toHaveBeenCalledWith('which tmux', { stdio: 'ignore' });
+      
+      // Restore env variable
+      if (originalEnv !== undefined) {
+        process.env['WTT_DISABLE_TMUX'] = originalEnv;
+      }
     });
 
     it('should return false when tmux is not found', async () => {

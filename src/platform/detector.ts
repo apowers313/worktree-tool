@@ -39,6 +39,11 @@ function detectOS(): 'windows' | 'macos' | 'linux' {
  * Check if tmux is available on the system
  */
 export async function checkTmuxAvailable(): Promise<boolean> {
+  // Check for test environment variable to disable tmux
+  if (process.env['WTT_DISABLE_TMUX'] === 'true') {
+    return false;
+  }
+  
   // Windows doesn't have tmux
   if (process.platform === 'win32') {
     return false;
@@ -56,6 +61,11 @@ export async function checkTmuxAvailable(): Promise<boolean> {
  * Synchronous version of tmux check for platform detection
  */
 function checkTmuxAvailableSync(): boolean {
+  // Check for test environment variable to disable tmux
+  if (process.env['WTT_DISABLE_TMUX'] === 'true') {
+    return false;
+  }
+  
   // Windows doesn't have tmux
   if (process.platform === 'win32') {
     return false;
