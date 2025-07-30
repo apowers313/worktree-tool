@@ -1,39 +1,49 @@
 import { Command } from 'commander';
-import { getLogger } from '../utils/logger';
+import chalk from 'chalk';
 
 /**
  * Execute the help command
  */
-export async function executeHelp(): Promise<void> {
-  const logger = getLogger();
-  
-  logger.info('wtt - Git Worktree Management Tool\n');
-  
-  logger.info('USAGE:');
-  logger.info('  wtt <command> [options]\n');
-  
-  logger.info('COMMANDS:');
-  logger.info('  init              Initialize worktree management in current repository');
-  logger.info('  create            Create a new worktree for a feature branch');
-  logger.info('  help              Show this help message\n');
-  
-  logger.info('EXAMPLES:');
-  logger.info('  wtt init                           # Initialize with defaults');
-  logger.info('  wtt init --enable-tmux             # Initialize with tmux integration');
-  logger.info('  wtt init --project-name "My App"   # Initialize with custom project name');
-  logger.info('  wtt create feature-login           # Create worktree for feature-login branch');
-  logger.info('  wtt create "Add New Button"        # Create worktree with spaces in name\n');
-  
-  logger.info('OPTIONS:');
-  logger.info('  --verbose         Show detailed output');
-  logger.info('  --help           Show help for specific command\n');
-  
-  logger.info('For command-specific help, use: wtt <command> --help');
+export async function executeHelp(commandName?: string, program?: Command): Promise<void> {
+  if (commandName && program) {
+    const command = program.commands.find(cmd => cmd.name() === commandName);
+    if (command) {
+      console.log(command.helpInformation());
+    } else {
+      console.error(chalk.red(`Unknown command: ${commandName}`));
+      console.log(`Run 'wtt help' to see available commands`);
+      process.exit(1);
+    }
+  } else {
+    showGeneralHelp();
+  }
+}
+
+function showGeneralHelp(): void {
+  console.log(chalk.bold('wtt - Git worktree management tool'));
+  console.log();
+  console.log('Usage: wtt <command> [options]');
+  console.log();
+  console.log('Commands:');
+  console.log('  init         Initialize a worktree project in the current repository');
+  console.log('  create       Create a new worktree and open it in a shell or tmux window');
+  console.log('  help         Display help information');
+  console.log();
+  console.log('Examples:');
+  console.log('  wtt init                     # Initialize with auto-detected settings');
+  console.log('  wtt init --project-name=myapp --disable-tmux');
+  console.log('  wtt create feature-xyz       # Create worktree for feature-xyz');
+  console.log('  wtt help init               # Show help for init command');
+  console.log();
+  console.log('Run \'wtt help <command>\' for more information on a specific command.');
 }
 
 /**
  * Create the help command
  */
-export const helpCommand = new Command('help')
-  .description('Display help information')
-  .action(() => executeHelp());
+export function createHelpCommand(program: Command): Command {
+  return new Command('help')
+    .argument('[command]', 'Command to show help for')
+    .description('Display help information')
+    .action((commandName?: string) => executeHelp(commandName, program));
+}

@@ -1,83 +1,73 @@
-import { executeHelp, helpCommand } from '../../../src/commands/help';
-import * as logger from '../../../src/utils/logger';
+import { Command } from 'commander';
+import { executeHelp, createHelpCommand } from '../../../src/commands/help';
+import chalk from 'chalk';
 
-// Mock logger
-jest.mock('../../../src/utils/logger');
-
-describe('Help Command', () => {
-  let mockLogger: any;
+describe('help command', () => {
+  let consoleLogSpy: jest.SpyInstance;
+  let consoleErrorSpy: jest.SpyInstance;
+  let processExitSpy: jest.SpyInstance;
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    
-    // Mock logger
-    mockLogger = {
-      info: jest.fn(),
-      verbose: jest.fn(),
-      success: jest.fn(),
-      error: jest.fn(),
-      warn: jest.fn(),
-      getLevel: jest.fn().mockReturnValue('normal')
-    };
-    (logger.getLogger as jest.Mock).mockReturnValue(mockLogger);
+    consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
+    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+    processExitSpy = jest.spyOn(process, 'exit').mockImplementation(() => {
+      throw new Error('process.exit was called');
+    });
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   describe('executeHelp', () => {
-    it('should display general help information', async () => {
+    it('should show general help when no command is specified', async () => {
       await executeHelp();
-      
-      // Check that help information is displayed
-      expect(mockLogger.info).toHaveBeenCalledWith('wtt - Git Worktree Management Tool\n');
-      expect(mockLogger.info).toHaveBeenCalledWith('USAGE:');
-      expect(mockLogger.info).toHaveBeenCalledWith('COMMANDS:');
-      expect(mockLogger.info).toHaveBeenCalledWith('EXAMPLES:');
-      expect(mockLogger.info).toHaveBeenCalledWith('OPTIONS:');
+
+      expect(consoleLogSpy).toHaveBeenCalledWith(chalk.bold('wtt - Git worktree management tool'));
+      expect(consoleLogSpy).toHaveBeenCalledWith('Usage: wtt <command> [options]');
+      expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('Commands:'));
+      expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('init'));
+      expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('create'));
+      expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('help'));
+      expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('Examples:'));
     });
 
-    it('should show available commands', async () => {
-      await executeHelp();
-      
-      expect(mockLogger.info).toHaveBeenCalledWith('  init              Initialize worktree management in current repository');
-      expect(mockLogger.info).toHaveBeenCalledWith('  create            Create a new worktree for a feature branch');
-      expect(mockLogger.info).toHaveBeenCalledWith('  help              Show this help message\n');
+    it('should show command-specific help when valid command is specified', async () => {
+      const program = new Command();
+      const initCommand = new Command('init')
+        .description('Initialize worktree project')
+        .option('--project-name <name>', 'Project name');
+      program.addCommand(initCommand);
+
+      const helpInfoSpy = jest.spyOn(initCommand, 'helpInformation').mockReturnValue('Init command help');
+
+      await executeHelp('init', program);
+
+      expect(helpInfoSpy).toHaveBeenCalled();
+      expect(consoleLogSpy).toHaveBeenCalledWith('Init command help');
     });
 
-    it('should show usage examples', async () => {
-      await executeHelp();
+    it('should show error for unknown command', async () => {
+      const program = new Command();
       
-      expect(mockLogger.info).toHaveBeenCalledWith('  wtt init                           # Initialize with defaults');
-      expect(mockLogger.info).toHaveBeenCalledWith('  wtt create feature-login           # Create worktree for feature-login branch');
-      expect(mockLogger.info).toHaveBeenCalledWith('  wtt create "Add New Button"        # Create worktree with spaces in name\n');
-    });
-
-    it('should show available options', async () => {
-      await executeHelp();
+      await expect(executeHelp('unknown', program)).rejects.toThrow('process.exit was called');
       
-      expect(mockLogger.info).toHaveBeenCalledWith('  --verbose         Show detailed output');
-      expect(mockLogger.info).toHaveBeenCalledWith('  --help           Show help for specific command\n');
-    });
-
-    it('should show command-specific help instruction', async () => {
-      await executeHelp();
-      
-      expect(mockLogger.info).toHaveBeenCalledWith('For command-specific help, use: wtt <command> --help');
+      expect(consoleErrorSpy).toHaveBeenCalledWith(chalk.red('Unknown command: unknown'));
+      expect(consoleLogSpy).toHaveBeenCalledWith("Run 'wtt help' to see available commands");
+      expect(processExitSpy).toHaveBeenCalledWith(1);
     });
   });
 
-  describe('Help Command Definition', () => {
-    it('should have correct command name', () => {
+  describe('createHelpCommand', () => {
+    it('should create help command with correct configuration', () => {
+      const program = new Command();
+      const helpCommand = createHelpCommand(program);
+
       expect(helpCommand.name()).toBe('help');
+      expect(helpCommand.description()).toBe('Display help information');
+      expect(helpCommand.registeredArguments).toHaveLength(1);
+      expect(helpCommand.registeredArguments[0]?.name()).toBe('command');
     });
 
-    it('should have description', () => {
-      expect(helpCommand.description()).toContain('Display help information');
-    });
-
-    it('should not have any required options', () => {
-      const options = helpCommand.options;
-      const requiredOptions = options.filter(opt => opt.required);
-      
-      expect(requiredOptions).toHaveLength(0);
-    });
   });
 });
