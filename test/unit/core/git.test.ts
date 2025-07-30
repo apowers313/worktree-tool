@@ -1,226 +1,230 @@
-import { Git, createGit } from '../../../src/core/git';
-import { GitError } from '../../../src/utils/errors';
-import simpleGit from 'simple-git';
+import simpleGit from "simple-git";
+
+import {createGit, Git} from "../../../src/core/git";
+import {GitError} from "../../../src/utils/errors";
 
 // Mock simple-git
-jest.mock('simple-git');
+jest.mock("simple-git");
 
-describe('Git Wrapper', () => {
-  let mockGit: any;
-  let git: Git;
+describe("Git Wrapper", () => {
+    let mockGit: any;
+    let git: Git;
 
-  beforeEach(() => {
+    beforeEach(() => {
     // Reset mocks
-    jest.clearAllMocks();
-    
-    // Create mock git instance
-    mockGit = {
-      checkIsRepo: jest.fn(),
-      status: jest.fn(),
-      branch: jest.fn(),
-      raw: jest.fn(),
-      revparse: jest.fn(),
-    };
-    
-    // Make simpleGit return our mock
-    (simpleGit as any).mockReturnValue(mockGit);
-    
-    git = new Git();
-  });
+        jest.clearAllMocks();
 
-  describe('isGitRepository', () => {
-    it('should return true when in a git repository', async () => {
-      mockGit.checkIsRepo.mockResolvedValue(true);
-      
-      const result = await git.isGitRepository();
-      
-      expect(result).toBe(true);
-      expect(mockGit.checkIsRepo).toHaveBeenCalledTimes(1);
+        // Create mock git instance
+        mockGit = {
+            checkIsRepo: jest.fn(),
+            status: jest.fn(),
+            branch: jest.fn(),
+            raw: jest.fn(),
+            revparse: jest.fn(),
+        };
+
+        // Make simpleGit return our mock
+        (simpleGit as any).mockReturnValue(mockGit);
+
+        git = new Git();
     });
 
-    it('should return false when not in a git repository', async () => {
-      mockGit.checkIsRepo.mockResolvedValue(false);
-      
-      const result = await git.isGitRepository();
-      
-      expect(result).toBe(false);
+    describe("isGitRepository", () => {
+        it("should return true when in a git repository", async() => {
+            mockGit.checkIsRepo.mockResolvedValue(true);
+
+            const result = await git.isGitRepository();
+
+            expect(result).toBe(true);
+            expect(mockGit.checkIsRepo).toHaveBeenCalledTimes(1);
+        });
+
+        it("should return false when not in a git repository", async() => {
+            mockGit.checkIsRepo.mockResolvedValue(false);
+
+            const result = await git.isGitRepository();
+
+            expect(result).toBe(false);
+        });
+
+        it("should return false when checkIsRepo throws an error", async() => {
+            mockGit.checkIsRepo.mockRejectedValue(new Error("Not a git repository"));
+
+            const result = await git.isGitRepository();
+
+            expect(result).toBe(false);
+        });
     });
 
-    it('should return false when checkIsRepo throws an error', async () => {
-      mockGit.checkIsRepo.mockRejectedValue(new Error('Not a git repository'));
-      
-      const result = await git.isGitRepository();
-      
-      expect(result).toBe(false);
-    });
-  });
+    describe("getMainBranch", () => {
+        it("should detect \"main\" branch when it exists", async() => {
+            mockGit.status.mockResolvedValue({current: "feature"});
+            mockGit.branch.mockResolvedValue({
+                all: ["main", "feature", "develop"],
+                current: "feature",
+            });
 
-  describe('getMainBranch', () => {
-    it('should detect "main" branch when it exists', async () => {
-      mockGit.status.mockResolvedValue({ current: 'feature' });
-      mockGit.branch.mockResolvedValue({
-        all: ['main', 'feature', 'develop'],
-        current: 'feature'
-      });
-      
-      const result = await git.getMainBranch();
-      
-      expect(result).toBe('main');
-    });
+            const result = await git.getMainBranch();
 
-    it('should detect "master" branch when "main" does not exist', async () => {
-      mockGit.status.mockResolvedValue({ current: 'feature' });
-      mockGit.branch.mockResolvedValue({
-        all: ['master', 'feature', 'develop'],
-        current: 'feature'
-      });
-      
-      const result = await git.getMainBranch();
-      
-      expect(result).toBe('master');
-    });
+            expect(result).toBe("main");
+        });
 
-    it('should detect "trunk" branch', async () => {
-      mockGit.status.mockResolvedValue({ current: 'feature' });
-      mockGit.branch.mockResolvedValue({
-        all: ['trunk', 'feature'],
-        current: 'feature'
-      });
-      
-      const result = await git.getMainBranch();
-      
-      expect(result).toBe('trunk');
-    });
+        it("should detect \"master\" branch when \"main\" does not exist", async() => {
+            mockGit.status.mockResolvedValue({current: "feature"});
+            mockGit.branch.mockResolvedValue({
+                all: ["master", "feature", "develop"],
+                current: "feature",
+            });
 
-    it('should detect "development" branch', async () => {
-      mockGit.status.mockResolvedValue({ current: 'feature' });
-      mockGit.branch.mockResolvedValue({
-        all: ['development', 'feature'],
-        current: 'feature'
-      });
-      
-      const result = await git.getMainBranch();
-      
-      expect(result).toBe('development');
-    });
+            const result = await git.getMainBranch();
 
-    it('should use git config init.defaultBranch when no common branch found', async () => {
-      mockGit.status.mockResolvedValue({ current: 'feature' });
-      mockGit.branch.mockResolvedValue({
-        all: ['feature', 'custom'],
-        current: 'feature'
-      });
-      mockGit.raw.mockResolvedValue('custom-main\n');
-      
-      const result = await git.getMainBranch();
-      
-      expect(result).toBe('custom-main');
-      expect(mockGit.raw).toHaveBeenCalledWith(['config', '--get', 'init.defaultBranch']);
-    });
+            expect(result).toBe("master");
+        });
 
-    it('should detect default branch when no commits exist', async () => {
-      mockGit.status.mockResolvedValue({ current: null });
-      mockGit.branch.mockResolvedValue({
-        all: [],
-        current: null
-      });
-      mockGit.raw.mockImplementation((args: string[]) => {
-        if (args[0] === 'symbolic-ref' && args[1] === 'HEAD') {
-          return Promise.resolve('refs/heads/master\n');
-        }
-        return Promise.reject(new Error('Command not found'));
-      });
-      
-      const result = await git.getMainBranch();
-      
-      expect(result).toBe('master');
-      expect(mockGit.raw).toHaveBeenCalledWith(['symbolic-ref', 'HEAD']);
-    });
+        it("should detect \"trunk\" branch", async() => {
+            mockGit.status.mockResolvedValue({current: "feature"});
+            mockGit.branch.mockResolvedValue({
+                all: ["trunk", "feature"],
+                current: "feature",
+            });
 
-    it('should fall back to config when symbolic-ref fails', async () => {
-      mockGit.status.mockResolvedValue({ current: null });
-      mockGit.branch.mockResolvedValue({
-        all: [],
-        current: null
-      });
-      mockGit.raw.mockImplementation((args: string[]) => {
-        if (args[0] === 'symbolic-ref' && args[1] === 'HEAD') {
-          return Promise.reject(new Error('Not a symbolic ref'));
-        }
-        if (args[0] === 'config' && args[1] === '--get' && args[2] === 'init.defaultBranch') {
-          return Promise.resolve('main\n');
-        }
-        return Promise.reject(new Error('Command not found'));
-      });
-      
-      const result = await git.getMainBranch();
-      
-      expect(result).toBe('main');
-    });
+            const result = await git.getMainBranch();
 
-    it('should default to main when no branch info available', async () => {
-      mockGit.status.mockResolvedValue({ current: null });
-      mockGit.branch.mockResolvedValue({
-        all: [],
-        current: null
-      });
-      mockGit.raw.mockRejectedValue(new Error('Command failed'));
-      
-      const result = await git.getMainBranch();
-      
-      expect(result).toBe('main');
-    });
+            expect(result).toBe("trunk");
+        });
 
-    it('should throw GitError when status fails', async () => {
-      mockGit.status.mockRejectedValue(new Error('Git error'));
-      
-      await expect(git.getMainBranch()).rejects.toThrow(GitError);
-      await expect(git.getMainBranch()).rejects.toThrow('Failed to detect main branch');
-    });
-  });
+        it("should detect \"development\" branch", async() => {
+            mockGit.status.mockResolvedValue({current: "feature"});
+            mockGit.branch.mockResolvedValue({
+                all: ["development", "feature"],
+                current: "feature",
+            });
 
-  describe('createWorktree', () => {
-    it('should create worktree with existing branch', async () => {
-      mockGit.branch.mockResolvedValue({
-        all: ['main', 'feature-branch'],
-        current: 'main'
-      });
-      mockGit.raw.mockResolvedValue('');
-      
-      await git.createWorktree('/path/to/worktree', 'feature-branch');
-      
-      expect(mockGit.raw).toHaveBeenCalledWith(['worktree', 'add', '/path/to/worktree', 'feature-branch']);
+            const result = await git.getMainBranch();
+
+            expect(result).toBe("development");
+        });
+
+        it("should use git config init.defaultBranch when no common branch found", async() => {
+            mockGit.status.mockResolvedValue({current: "feature"});
+            mockGit.branch.mockResolvedValue({
+                all: ["feature", "custom"],
+                current: "feature",
+            });
+            mockGit.raw.mockResolvedValue("custom-main\n");
+
+            const result = await git.getMainBranch();
+
+            expect(result).toBe("custom-main");
+            expect(mockGit.raw).toHaveBeenCalledWith(["config", "--get", "init.defaultBranch"]);
+        });
+
+        it("should detect default branch when no commits exist", async() => {
+            mockGit.status.mockResolvedValue({current: null});
+            mockGit.branch.mockResolvedValue({
+                all: [],
+                current: null,
+            });
+            mockGit.raw.mockImplementation((args: string[]) => {
+                if (args[0] === "symbolic-ref" && args[1] === "HEAD") {
+                    return Promise.resolve("refs/heads/master\n");
+                }
+
+                return Promise.reject(new Error("Command not found"));
+            });
+
+            const result = await git.getMainBranch();
+
+            expect(result).toBe("master");
+            expect(mockGit.raw).toHaveBeenCalledWith(["symbolic-ref", "HEAD"]);
+        });
+
+        it("should fall back to config when symbolic-ref fails", async() => {
+            mockGit.status.mockResolvedValue({current: null});
+            mockGit.branch.mockResolvedValue({
+                all: [],
+                current: null,
+            });
+            mockGit.raw.mockImplementation((args: string[]) => {
+                if (args[0] === "symbolic-ref" && args[1] === "HEAD") {
+                    return Promise.reject(new Error("Not a symbolic ref"));
+                }
+
+                if (args[0] === "config" && args[1] === "--get" && args[2] === "init.defaultBranch") {
+                    return Promise.resolve("main\n");
+                }
+
+                return Promise.reject(new Error("Command not found"));
+            });
+
+            const result = await git.getMainBranch();
+
+            expect(result).toBe("main");
+        });
+
+        it("should default to main when no branch info available", async() => {
+            mockGit.status.mockResolvedValue({current: null});
+            mockGit.branch.mockResolvedValue({
+                all: [],
+                current: null,
+            });
+            mockGit.raw.mockRejectedValue(new Error("Command failed"));
+
+            const result = await git.getMainBranch();
+
+            expect(result).toBe("main");
+        });
+
+        it("should throw GitError when status fails", async() => {
+            mockGit.status.mockRejectedValue(new Error("Git error"));
+
+            await expect(git.getMainBranch()).rejects.toThrow(GitError);
+            await expect(git.getMainBranch()).rejects.toThrow("Failed to detect main branch");
+        });
     });
 
-    it('should create worktree with new branch', async () => {
-      mockGit.branch.mockResolvedValue({
-        all: ['main'],
-        current: 'main'
-      });
-      mockGit.raw.mockResolvedValue('');
-      
-      await git.createWorktree('/path/to/worktree', 'new-feature');
-      
-      expect(mockGit.raw).toHaveBeenCalledWith(['worktree', 'add', '-b', 'new-feature', '/path/to/worktree']);
+    describe("createWorktree", () => {
+        it("should create worktree with existing branch", async() => {
+            mockGit.branch.mockResolvedValue({
+                all: ["main", "feature-branch"],
+                current: "main",
+            });
+            mockGit.raw.mockResolvedValue("");
+
+            await git.createWorktree("/path/to/worktree", "feature-branch");
+
+            expect(mockGit.raw).toHaveBeenCalledWith(["worktree", "add", "/path/to/worktree", "feature-branch"]);
+        });
+
+        it("should create worktree with new branch", async() => {
+            mockGit.branch.mockResolvedValue({
+                all: ["main"],
+                current: "main",
+            });
+            mockGit.raw.mockResolvedValue("");
+
+            await git.createWorktree("/path/to/worktree", "new-feature");
+
+            expect(mockGit.raw).toHaveBeenCalledWith(["worktree", "add", "-b", "new-feature", "/path/to/worktree"]);
+        });
+
+        it("should throw GitError when worktree creation fails", async() => {
+            mockGit.branch.mockResolvedValue({
+                all: ["main"],
+                current: "main",
+            });
+            mockGit.raw.mockRejectedValue(new Error("Worktree already exists"));
+
+            await expect(git.createWorktree("/path/to/worktree", "feature"))
+                .rejects.toThrow(GitError);
+            await expect(git.createWorktree("/path/to/worktree", "feature"))
+                .rejects.toThrow("Failed to create worktree");
+        });
     });
 
-    it('should throw GitError when worktree creation fails', async () => {
-      mockGit.branch.mockResolvedValue({
-        all: ['main'],
-        current: 'main'
-      });
-      mockGit.raw.mockRejectedValue(new Error('Worktree already exists'));
-      
-      await expect(git.createWorktree('/path/to/worktree', 'feature'))
-        .rejects.toThrow(GitError);
-      await expect(git.createWorktree('/path/to/worktree', 'feature'))
-        .rejects.toThrow('Failed to create worktree');
-    });
-  });
-
-  describe('listWorktrees', () => {
-    it('should parse worktree list correctly', async () => {
-      const porcelainOutput = `worktree /home/user/project
+    describe("listWorktrees", () => {
+        it("should parse worktree list correctly", async() => {
+            const porcelainOutput = `worktree /home/user/project
 HEAD abc123def456
 branch refs/heads/main
 
@@ -233,129 +237,129 @@ HEAD 456789jkl012
 branch refs/heads/locked-feature
 locked
 `;
-      
-      mockGit.raw.mockResolvedValue(porcelainOutput);
-      
-      const result = await git.listWorktrees();
-      
-      expect(result).toHaveLength(3);
-      
-      expect(result[0]).toEqual({
-        path: '/home/user/project',
-        commit: 'abc123def456',
-        branch: 'refs/heads/main',
-        isMain: true,
-        isLocked: false
-      });
-      
-      expect(result[1]).toEqual({
-        path: '/home/user/project/.worktrees/feature',
-        commit: '789012ghi345',
-        branch: 'refs/heads/feature',
-        isMain: false,
-        isLocked: false
-      });
-      
-      expect(result[2]).toEqual({
-        path: '/home/user/project/.worktrees/locked-feature',
-        commit: '456789jkl012',
-        branch: 'refs/heads/locked-feature',
-        isMain: false,
-        isLocked: true
-      });
-    });
 
-    it('should return empty array when no worktrees', async () => {
-      mockGit.raw.mockResolvedValue('');
-      
-      const result = await git.listWorktrees();
-      
-      expect(result).toEqual([]);
-    });
+            mockGit.raw.mockResolvedValue(porcelainOutput);
 
-    it('should handle bare repository', async () => {
-      const porcelainOutput = `worktree /home/user/repo.git
+            const result = await git.listWorktrees();
+
+            expect(result).toHaveLength(3);
+
+            expect(result[0]).toEqual({
+                path: "/home/user/project",
+                commit: "abc123def456",
+                branch: "refs/heads/main",
+                isMain: true,
+                isLocked: false,
+            });
+
+            expect(result[1]).toEqual({
+                path: "/home/user/project/.worktrees/feature",
+                commit: "789012ghi345",
+                branch: "refs/heads/feature",
+                isMain: false,
+                isLocked: false,
+            });
+
+            expect(result[2]).toEqual({
+                path: "/home/user/project/.worktrees/locked-feature",
+                commit: "456789jkl012",
+                branch: "refs/heads/locked-feature",
+                isMain: false,
+                isLocked: true,
+            });
+        });
+
+        it("should return empty array when no worktrees", async() => {
+            mockGit.raw.mockResolvedValue("");
+
+            const result = await git.listWorktrees();
+
+            expect(result).toEqual([]);
+        });
+
+        it("should handle bare repository", async() => {
+            const porcelainOutput = `worktree /home/user/repo.git
 bare
 `;
-      
-      mockGit.raw.mockResolvedValue(porcelainOutput);
-      
-      const result = await git.listWorktrees();
-      
-      expect(result).toHaveLength(1);
-      expect(result[0]?.isMain).toBe(true);
+
+            mockGit.raw.mockResolvedValue(porcelainOutput);
+
+            const result = await git.listWorktrees();
+
+            expect(result).toHaveLength(1);
+            expect(result[0]?.isMain).toBe(true);
+        });
+
+        it("should throw GitError when listing fails", async() => {
+            mockGit.raw.mockRejectedValue(new Error("Git command failed"));
+
+            await expect(git.listWorktrees()).rejects.toThrow(GitError);
+            await expect(git.listWorktrees()).rejects.toThrow("Failed to list worktrees");
+        });
     });
 
-    it('should throw GitError when listing fails', async () => {
-      mockGit.raw.mockRejectedValue(new Error('Git command failed'));
-      
-      await expect(git.listWorktrees()).rejects.toThrow(GitError);
-      await expect(git.listWorktrees()).rejects.toThrow('Failed to list worktrees');
-    });
-  });
+    describe("getRepoRoot", () => {
+        it("should return repository root path", async() => {
+            mockGit.revparse.mockResolvedValue("/home/user/project\n");
 
-  describe('getRepoRoot', () => {
-    it('should return repository root path', async () => {
-      mockGit.revparse.mockResolvedValue('/home/user/project\n');
-      
-      const result = await git.getRepoRoot();
-      
-      expect(result).toBe('/home/user/project');
-      expect(mockGit.revparse).toHaveBeenCalledWith(['--show-toplevel']);
-    });
+            const result = await git.getRepoRoot();
 
-    it('should throw GitError when not in a repository', async () => {
-      mockGit.revparse.mockRejectedValue(new Error('Not in a git repository'));
-      
-      await expect(git.getRepoRoot()).rejects.toThrow(GitError);
-      await expect(git.getRepoRoot()).rejects.toThrow('Failed to get repository root');
-    });
-  });
+            expect(result).toBe("/home/user/project");
+            expect(mockGit.revparse).toHaveBeenCalledWith(["--show-toplevel"]);
+        });
 
-  describe('branchExists', () => {
-    it('should return true when branch exists', async () => {
-      mockGit.branch.mockResolvedValue({
-        all: ['main', 'feature', 'develop'],
-        current: 'main'
-      });
-      
-      const result = await git.branchExists('feature');
-      
-      expect(result).toBe(true);
+        it("should throw GitError when not in a repository", async() => {
+            mockGit.revparse.mockRejectedValue(new Error("Not in a git repository"));
+
+            await expect(git.getRepoRoot()).rejects.toThrow(GitError);
+            await expect(git.getRepoRoot()).rejects.toThrow("Failed to get repository root");
+        });
     });
 
-    it('should return false when branch does not exist', async () => {
-      mockGit.branch.mockResolvedValue({
-        all: ['main', 'develop'],
-        current: 'main'
-      });
-      
-      const result = await git.branchExists('feature');
-      
-      expect(result).toBe(false);
+    describe("branchExists", () => {
+        it("should return true when branch exists", async() => {
+            mockGit.branch.mockResolvedValue({
+                all: ["main", "feature", "develop"],
+                current: "main",
+            });
+
+            const result = await git.branchExists("feature");
+
+            expect(result).toBe(true);
+        });
+
+        it("should return false when branch does not exist", async() => {
+            mockGit.branch.mockResolvedValue({
+                all: ["main", "develop"],
+                current: "main",
+            });
+
+            const result = await git.branchExists("feature");
+
+            expect(result).toBe(false);
+        });
+
+        it("should throw GitError when branch check fails", async() => {
+            mockGit.branch.mockRejectedValue(new Error("Git error"));
+
+            await expect(git.branchExists("feature")).rejects.toThrow(GitError);
+            await expect(git.branchExists("feature")).rejects.toThrow("Failed to check branch existence");
+        });
     });
 
-    it('should throw GitError when branch check fails', async () => {
-      mockGit.branch.mockRejectedValue(new Error('Git error'));
-      
-      await expect(git.branchExists('feature')).rejects.toThrow(GitError);
-      await expect(git.branchExists('feature')).rejects.toThrow('Failed to check branch existence');
-    });
-  });
+    describe("createGit", () => {
+        it("should create Git instance with default directory", () => {
+            const gitInstance = createGit();
 
-  describe('createGit', () => {
-    it('should create Git instance with default directory', () => {
-      const gitInstance = createGit();
-      
-      expect(gitInstance).toBeInstanceOf(Git);
-      expect(simpleGit).toHaveBeenCalledWith(undefined);
-    });
+            expect(gitInstance).toBeInstanceOf(Git);
+            expect(simpleGit).toHaveBeenCalledWith(undefined);
+        });
 
-    it('should create Git instance with specified directory', () => {
-      const gitInstance = createGit('/custom/path');
-      
-      expect(gitInstance).toBeInstanceOf(Git);
-      expect(simpleGit).toHaveBeenCalledWith('/custom/path');
+        it("should create Git instance with specified directory", () => {
+            const gitInstance = createGit("/custom/path");
+
+            expect(gitInstance).toBeInstanceOf(Git);
+            expect(simpleGit).toHaveBeenCalledWith("/custom/path");
+        });
     });
-  });
 });

@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-import { program } from './cli/program';
-import { initCommand } from './commands/init';
-import { createCommand } from './commands/create';
-import { createHelpCommand } from './commands/help';
+import {program} from "./cli/program";
+import {createCommand} from "./commands/create";
+import {createHelpCommand} from "./commands/help";
+import {initCommand} from "./commands/init";
 
 // Register commands
 program.addCommand(initCommand);

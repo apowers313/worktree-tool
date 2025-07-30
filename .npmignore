@@ -1,0 +1,39 @@
+# Source files
+src/
+test/
+
+# Config files
+.husky/
+.github/
+.gitignore
+.eslintrc.json
+eslint.config.js
+commitlint.config.js
+.releaserc
+tsconfig.json
+jest.config.js
+jest.config.*.js
+
+# Development files
+*.log
+*.tgz
+coverage/
+.worktree-config.json
+.worktrees/
+
+# IDE
+.vscode/
+.idea/
+
+# Build artifacts not needed
+*.map
+
+# Documentation source
+design/
+manual-test/
+test-*/
+
+# Misc
+.DS_Store
+*.swp
+*.swo
