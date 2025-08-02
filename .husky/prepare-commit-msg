@@ -1,2 +1,1 @@
-# Disabled for now - use 'npx cz' directly instead of 'git commit'
-# exec < /dev/tty && npx cz --hook || true
+exec < /dev/tty && npx cz --hook || true
