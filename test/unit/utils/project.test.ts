@@ -16,7 +16,7 @@ jest.mock("fs", () => ({
 }));
 
 describe("Project Detection", () => {
-    const mockFs = fs as jest.Mocked<typeof fs>;
+    const mockFs = fs as any;
     const originalCwd = process.cwd();
 
     beforeEach(() => {

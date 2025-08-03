@@ -20,11 +20,9 @@ jest.mock("../../../src/platform/tmux");
 jest.mock("../../../src/utils/logger");
 
 describe("Create Command", () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let mockLogger: any;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let mockGit: any;
-    let mockExit: jest.SpyInstance;
+    let mockExit: any;
 
     beforeEach(() => {
         jest.clearAllMocks();

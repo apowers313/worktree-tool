@@ -16,7 +16,7 @@ jest.mock("../../../src/utils/logger");
 describe("Init Command", () => {
     let mockLogger: any;
     let mockGit: any;
-    let mockExit: jest.SpyInstance;
+    let mockExit: any;
 
     beforeEach(() => {
         jest.clearAllMocks();
