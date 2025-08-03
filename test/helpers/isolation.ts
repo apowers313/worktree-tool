@@ -84,8 +84,8 @@ export async function ensureNotInWorktree(): Promise<void> {
             await fs.access(configPath);
 
             // If we found a config in parent, make sure we're not in its worktree dir
-            const parentConfig = JSON.parse(await fs.readFile(configPath, "utf-8"));
-            const worktreePath = path.join(parentDir, parentConfig.baseDir || ".worktrees");
+            const parentConfig = JSON.parse(await fs.readFile(configPath, "utf-8")) as {baseDir?: unknown};
+            const worktreePath = path.join(parentDir, (typeof parentConfig.baseDir === "string" ? parentConfig.baseDir : null) ?? ".worktrees");
 
             if (cwd.startsWith(worktreePath)) {
                 throw new Error("Tests should not run inside a wtt worktree");

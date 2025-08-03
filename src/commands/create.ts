@@ -33,7 +33,7 @@ export function sanitizeWorktreeName(name: string): string {
     // Replace spaces with hyphens
         .replace(/\s+/g, "-")
     // Remove characters that are invalid in git branch names (including forward slash)
-        .replace(/[~^:?*\[\]\\!@#$%&*()+={}|"'<>`,\/]/g, "")
+        .replace(/[~^:?*[\]\\!@#$%&*()+={}|"'<>`,/]/g, "")
     // Remove leading/trailing dots and hyphens
         .replace(/^[.-]+|[.-]+$/g, "")
     // Ensure it doesn't start with a hyphen (git doesn't like that)
@@ -237,4 +237,4 @@ async function handleShellSpawning(
 export const createCommand = new Command("create")
     .description("Create a new worktree for a feature branch")
     .argument("<name>", "name of the worktree and branch to create")
-    .action((name) => executeCreate({name}));
+    .action((name: string) => executeCreate({name}));

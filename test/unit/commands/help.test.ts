@@ -21,8 +21,8 @@ describe("help command", () => {
     });
 
     describe("executeHelp", () => {
-        it("should show general help when no command is specified", async() => {
-            await executeHelp();
+        it("should show general help when no command is specified", () => {
+            executeHelp();
 
             expect(consoleLogSpy).toHaveBeenCalledWith(chalk.bold("wtt - Git worktree management tool"));
             expect(consoleLogSpy).toHaveBeenCalledWith("Usage: wtt <command> [options]");
@@ -33,7 +33,7 @@ describe("help command", () => {
             expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining("Examples:"));
         });
 
-        it("should show command-specific help when valid command is specified", async() => {
+        it("should show command-specific help when valid command is specified", () => {
             const program = new Command();
             const initCommand = new Command("init")
                 .description("Initialize worktree project")
@@ -42,16 +42,18 @@ describe("help command", () => {
 
             const helpInfoSpy = jest.spyOn(initCommand, "helpInformation").mockReturnValue("Init command help");
 
-            await executeHelp("init", program);
+            executeHelp("init", program);
 
             expect(helpInfoSpy).toHaveBeenCalled();
             expect(consoleLogSpy).toHaveBeenCalledWith("Init command help");
         });
 
-        it("should show error for unknown command", async() => {
+        it("should show error for unknown command", () => {
             const program = new Command();
 
-            await expect(executeHelp("unknown", program)).rejects.toThrow("process.exit was called");
+            expect(() => {
+                executeHelp("unknown", program);
+            }).toThrow("process.exit was called");
 
             expect(consoleErrorSpy).toHaveBeenCalledWith(chalk.red("Unknown command: unknown"));
             expect(consoleLogSpy).toHaveBeenCalledWith("Run 'wtt help' to see available commands");

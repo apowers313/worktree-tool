@@ -39,7 +39,7 @@ function detectOS(): "windows" | "macos" | "linux" {
 /**
  * Check if tmux is available on the system
  */
-export async function checkTmuxAvailable(): Promise<boolean> {
+export function checkTmuxAvailable(): boolean {
     // Check for test environment variable to disable tmux
     if (process.env.WTT_DISABLE_TMUX === "true") {
         return false;
@@ -85,8 +85,7 @@ function checkTmuxAvailableSync(): boolean {
  */
 export function detectShell(): ShellType {
     // Check environment variables
-    const shell = process.env.SHELL || "";
-    const comspec = process.env.COMSPEC || "";
+    const shell = process.env.SHELL ?? "";
 
     // Unix-like shell detection
     if (shell.includes("zsh")) {
@@ -99,12 +98,8 @@ export function detectShell(): ShellType {
 
     // Windows shell detection
     if (process.platform === "win32") {
-        if (comspec.toLowerCase().includes("powershell") ||
-        process.env.PSModulePath) {
-            return "powershell";
-        }
-
-        return "cmd";
+        // Default to PowerShell on Windows
+        return "powershell";
     }
 
     // Default fallbacks
@@ -128,10 +123,8 @@ export function getShellPath(shellType: ShellType): string {
             return "/bin/zsh";
         case "powershell":
             return "powershell.exe";
-        case "cmd":
-            return "cmd.exe";
         default:
-            throw new PlatformError(`Unknown shell type: ${shellType}`);
+            throw new PlatformError(`Unknown shell type: ${shellType as string}`);
     }
 }
 
@@ -140,13 +133,13 @@ export function getShellPath(shellType: ShellType): string {
  */
 export function isCI(): boolean {
     return !!(
-        process.env.CI ||
-    process.env.CONTINUOUS_INTEGRATION ||
-    process.env.GITHUB_ACTIONS ||
-    process.env.GITLAB_CI ||
-    process.env.CIRCLECI ||
-    process.env.TRAVIS ||
-    process.env.JENKINS_URL ||
+        process.env.CI ??
+    process.env.CONTINUOUS_INTEGRATION ??
+    process.env.GITHUB_ACTIONS ??
+    process.env.GITLAB_CI ??
+    process.env.CIRCLECI ??
+    process.env.TRAVIS ??
+    process.env.JENKINS_URL ??
     process.env.TEAMCITY_VERSION
     );
 }

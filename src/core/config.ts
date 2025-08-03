@@ -15,7 +15,7 @@ export async function loadConfig(): Promise<WorktreeConfig | null> {
     try {
         const configPath = path.join(process.cwd(), CONFIG_FILENAME);
         const content = await fs.readFile(configPath, "utf-8");
-        const data = JSON.parse(content);
+        const data: unknown = JSON.parse(content);
 
         if (!validateConfig(data)) {
             throw new ConfigError("Invalid configuration format");

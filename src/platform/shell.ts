@@ -17,10 +17,8 @@ export function getShellCommand(shellType: ShellType): string {
             return "zsh";
         case "powershell":
             return "powershell";
-        case "cmd":
-            return "cmd";
         default:
-            throw new PlatformError(`Unsupported shell type: ${shellType}`);
+            throw new PlatformError(`Unsupported shell type: ${shellType as string}`);
     }
 }
 
@@ -34,10 +32,8 @@ export function getShellArgs(shellType: ShellType): string[] {
             return ["-i"]; // Interactive mode
         case "powershell":
             return ["-NoExit"]; // Don't exit after running commands
-        case "cmd":
-            return ["/K"]; // Keep window open after running commands
         default:
-            throw new PlatformError(`Unsupported shell type: ${shellType}`);
+            throw new PlatformError(`Unsupported shell type: ${shellType as string}`);
     }
 }
 
@@ -55,10 +51,8 @@ export function setShellPrompt(shellType: ShellType, worktreeName: string): stri
             return [`export PROMPT="${promptPrefix}"`];
         case "powershell":
             return [`function prompt { "${promptPrefix}" }`];
-        case "cmd":
-            return [`prompt ${promptPrefix}`];
         default:
-            throw new PlatformError(`Unsupported shell type: ${shellType}`);
+            throw new PlatformError(`Unsupported shell type: ${shellType as string}`);
     }
 }
 
@@ -71,19 +65,20 @@ export async function spawnShell(
     shellType: ShellType,
     worktreeName: string,
 ): Promise<void> {
-    return new Promise(async(resolve, reject) => {
-        try {
-            const command = getShellCommand(shellType);
-            const promptPrefix = `[${worktreeName}] > `;
+    return new Promise((resolve, reject) => {
+        void (async() => {
+            try {
+                const command = getShellCommand(shellType);
+                const promptPrefix = `[${worktreeName}] > `;
 
-            let args: string[];
-            const env = {... process.env};
-            const tempFiles: string[] = [];
+                let args: string[];
+                const env = {... process.env};
+                const tempFiles: string[] = [];
 
-            switch (shellType) {
-                case "bash":
+                switch (shellType) {
+                    case "bash": {
                     // Create temporary bashrc file with custom prompt
-                    const bashrc = `
+                        const bashrc = `
 # Load original bashrc if it exists
 if [ -f ~/.bashrc ]; then
   . ~/.bashrc
@@ -92,62 +87,61 @@ fi
 # Set custom prompt
 export PS1="${promptPrefix}"
 `;
-                    const tmpBashrc = path.join(os.tmpdir(), `wtt-bashrc-${Date.now()}`);
-                    await fs.writeFile(tmpBashrc, bashrc);
-                    tempFiles.push(tmpBashrc);
-                    args = ["--rcfile", tmpBashrc];
-                    break;
-
-                case "zsh":
-                    // Set PROMPT environment variable for zsh
-                    env.PROMPT = promptPrefix;
-                    args = ["-i"]; // Interactive mode
-                    break;
-
-                case "powershell":
-                    // Set prompt function and stay open
-                    args = ["-NoExit", "-Command", `function prompt { "${promptPrefix}" }`];
-                    break;
-
-                case "cmd":
-                    // Set prompt and stay open
-                    args = ["/K", `prompt ${promptPrefix}`];
-                    break;
-
-                default:
-                    throw new PlatformError(`Unsupported shell type: ${shellType}`);
-            }
-
-            const child = spawn(command, args, {
-                stdio: "inherit",
-                cwd: directory,
-                env: env,
-                detached: false,
-            });
-
-            child.on("error", (error) => {
-                reject(new PlatformError(`Failed to spawn shell: ${error.message}`));
-            });
-
-            child.on("exit", async(code) => {
-                // Clean up temporary files
-                for (const tempFile of tempFiles) {
-                    try {
-                        await fs.unlink(tempFile);
-                    } catch {
-                        // Ignore cleanup errors
+                        const tmpBashrc = path.join(os.tmpdir(), `wtt-bashrc-${Date.now().toString()}`);
+                        await fs.writeFile(tmpBashrc, bashrc);
+                        tempFiles.push(tmpBashrc);
+                        args = ["--rcfile", tmpBashrc];
+                        break;
                     }
+
+                    case "zsh":
+                    // Set PROMPT environment variable for zsh
+                        env.PROMPT = promptPrefix;
+                        args = ["-i"]; // Interactive mode
+                        break;
+
+                    case "powershell":
+                    // Set prompt function and stay open
+                        args = ["-NoExit", "-Command", `function prompt { "${promptPrefix}" }`];
+                        break;
+
+                    default:
+                        throw new PlatformError(`Unsupported shell type: ${shellType as string}`);
                 }
 
-                if (code === 0 || code === null) {
-                    resolve();
-                } else {
-                    reject(new PlatformError(`Shell exited with code ${code}`));
-                }
-            });
-        } catch(error) {
-            reject(new PlatformError(`Failed to spawn shell: ${error instanceof Error ? error.message : String(error)}`));
-        }
+                const child = spawn(command, args, {
+                    stdio: "inherit",
+                    cwd: directory,
+                    env: env,
+                    detached: false,
+                });
+
+                child.on("error", (error) => {
+                    reject(new PlatformError(`Failed to spawn shell: ${error.message}`));
+                });
+
+                child.on("exit", (code) => {
+                // Clean up temporary files
+                    void (async() => {
+                        for (const tempFile of tempFiles) {
+                            try {
+                                await fs.unlink(tempFile);
+                            } catch {
+                            // Ignore cleanup errors
+                            }
+                        }
+                    })();
+
+                    if (code === 0 || code === null) {
+                        resolve();
+                    } else {
+                        reject(new PlatformError(`Shell exited with code ${String(code)}`));
+                    }
+                });
+            } catch(error) {
+                reject(new PlatformError(`Failed to spawn shell: ${error instanceof Error ? error.message : String(error)}`));
+            }
+        })();
     });
 }
 

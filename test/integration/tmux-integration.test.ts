@@ -153,7 +153,7 @@ describeTmux("Tmux Integration Tests", () => {
 
         it("should not create extra windows in home or root directory", async() => {
             await withTestSandbox(async(sandbox) => {
-                const homeDir = process.env.HOME || "";
+                const homeDir = process.env.HOME ?? "";
 
                 // Create git repo with commit and initialize wtt with tmux
                 const git = await createIsolatedTestRepoWithCommit(sandbox);

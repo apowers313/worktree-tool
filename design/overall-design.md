@@ -223,7 +223,7 @@ Configuration stored in `.worktree-config.json`:
 interface Platform {
   os: 'windows' | 'macos' | 'linux';
   hasTmux: boolean;
-  shellType: 'bash' | 'zsh' | 'powershell' | 'cmd';
+  shellType: 'bash' | 'zsh' | 'powershell';
 }
 ```
 

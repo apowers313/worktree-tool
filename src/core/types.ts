@@ -33,7 +33,7 @@ export interface Platform {
 /**
  * Supported shell types
  */
-export type ShellType = "bash" | "zsh" | "powershell" | "cmd";
+export type ShellType = "bash" | "zsh" | "powershell";
 
 /**
  * Information about a git worktree

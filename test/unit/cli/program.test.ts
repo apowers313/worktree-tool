@@ -79,7 +79,7 @@ describe("CLI Program", () => {
             try {
                 program.exitOverride(); // Prevent process.exit
                 program.parse(["node", "wtt", "--version"]);
-            } catch(e) {
+            } catch {
                 // Commander throws for --version, which is expected
             }
 

@@ -46,7 +46,7 @@ describe("End-to-End Full Flow Tests", () => {
                         stdio: "pipe",
                         timeout: 5000, // Short timeout since shell spawning will hang
                     });
-                } catch(error: any) {
+                } catch {
                     // Expected to timeout due to shell spawning
                 }
 
@@ -67,7 +67,7 @@ describe("End-to-End Full Flow Tests", () => {
                         stdio: "pipe",
                         timeout: 5000,
                     });
-                } catch(error: any) {
+                } catch {
                     // Expected timeout
                 }
 
@@ -107,7 +107,7 @@ describe("End-to-End Full Flow Tests", () => {
 
                 // Verify custom config
                 const configContent = await fs.readFile(".worktree-config.json", "utf-8");
-                const config = JSON.parse(configContent);
+                const config = JSON.parse(configContent) as {projectName?: unknown, baseDir?: unknown, tmux?: unknown};
                 expect(config.projectName).toBe("Custom Project");
                 expect(config.baseDir).toBe("custom-worktrees");
                 expect(config.tmux).toBe(false);
@@ -119,7 +119,7 @@ describe("End-to-End Full Flow Tests", () => {
                         stdio: "pipe",
                         timeout: 5000,
                     });
-                } catch(error: any) {
+                } catch {
                     // Expected timeout
                 }
 
@@ -133,6 +133,7 @@ describe("End-to-End Full Flow Tests", () => {
 
     describe("Help Command Integration", () => {
         it("should display help without errors", async() => {
+            // eslint-disable-next-line @typescript-eslint/require-await
             await withTestSandbox(async() => {
                 const helpOutput = execSyncWithoutTmux(`node "${WTT_BIN}" help`, {encoding: "utf-8"});
 
@@ -147,6 +148,7 @@ describe("End-to-End Full Flow Tests", () => {
         });
 
         it("should show command-specific help", async() => {
+            // eslint-disable-next-line @typescript-eslint/require-await
             await withTestSandbox(async() => {
                 const initHelp = execSyncWithoutTmux(`node "${WTT_BIN}" init --help`, {encoding: "utf-8"});
                 expect(initHelp).toContain("Initialize a repository for worktree management");

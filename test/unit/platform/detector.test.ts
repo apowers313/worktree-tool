@@ -37,15 +37,13 @@ describe("Platform Detector", () => {
             Object.defineProperty(process, "platform", {
                 value: "win32",
             });
-            process.env.COMSPEC = "C:\\Windows\\System32\\cmd.exe";
             delete process.env.SHELL;
-            delete process.env.PSModulePath;
 
             const platform = detectPlatform();
 
             expect(platform.os).toBe("windows");
             expect(platform.hasTmux).toBe(false);
-            expect(platform.shellType).toBe("cmd");
+            expect(platform.shellType).toBe("powershell");
         });
 
         it("should detect macOS platform", () => {
@@ -53,7 +51,7 @@ describe("Platform Detector", () => {
                 value: "darwin",
             });
             process.env.SHELL = "/bin/zsh";
-            (execSync as jest.Mock).mockImplementation(() => {});
+            (execSync as jest.Mock).mockImplementation(() => undefined);
 
             const platform = detectPlatform();
 
@@ -88,18 +86,18 @@ describe("Platform Detector", () => {
     });
 
     describe("checkTmuxAvailable", () => {
-        it("should return false on Windows", async() => {
+        it("should return false on Windows", () => {
             Object.defineProperty(process, "platform", {
                 value: "win32",
             });
 
-            const result = await checkTmuxAvailable();
+            const result = checkTmuxAvailable();
 
             expect(result).toBe(false);
             expect(execSync).not.toHaveBeenCalled();
         });
 
-        it("should return true when tmux is found", async() => {
+        it("should return true when tmux is found", () => {
             // Save and clear the env variable
             const originalEnv = process.env.WTT_DISABLE_TMUX;
             delete process.env.WTT_DISABLE_TMUX;
@@ -107,9 +105,9 @@ describe("Platform Detector", () => {
             Object.defineProperty(process, "platform", {
                 value: "linux",
             });
-            (execSync as jest.Mock).mockImplementation(() => {});
+            (execSync as jest.Mock).mockImplementation(() => undefined);
 
-            const result = await checkTmuxAvailable();
+            const result = checkTmuxAvailable();
 
             expect(result).toBe(true);
             expect(execSync).toHaveBeenCalledWith("which tmux", {stdio: "ignore"});
@@ -120,7 +118,7 @@ describe("Platform Detector", () => {
             }
         });
 
-        it("should return false when tmux is not found", async() => {
+        it("should return false when tmux is not found", () => {
             Object.defineProperty(process, "platform", {
                 value: "linux",
             });
@@ -128,7 +126,7 @@ describe("Platform Detector", () => {
                 throw new Error("Command not found");
             });
 
-            const result = await checkTmuxAvailable();
+            const result = checkTmuxAvailable();
 
             expect(result).toBe(false);
         });
@@ -176,17 +174,15 @@ describe("Platform Detector", () => {
             expect(shell).toBe("powershell");
         });
 
-        it("should detect cmd on Windows", () => {
+        it("should default to PowerShell on Windows", () => {
             Object.defineProperty(process, "platform", {
                 value: "win32",
             });
-            process.env.COMSPEC = "C:\\Windows\\System32\\cmd.exe";
             delete process.env.SHELL;
-            delete process.env.PSModulePath;
 
             const shell = detectShell();
 
-            expect(shell).toBe("cmd");
+            expect(shell).toBe("powershell");
         });
 
         it("should default to zsh on macOS", () => {
@@ -243,12 +239,6 @@ describe("Platform Detector", () => {
             const path = getShellPath("powershell");
 
             expect(path).toBe("powershell.exe");
-        });
-
-        it("should return cmd.exe", () => {
-            const path = getShellPath("cmd");
-
-            expect(path).toBe("cmd.exe");
         });
 
         it("should throw error for unknown shell", () => {

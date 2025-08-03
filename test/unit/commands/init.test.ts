@@ -229,7 +229,7 @@ describe("Init Command", () => {
             (detector.detectPlatform as jest.Mock).mockReturnValue({
                 os: "windows",
                 hasTmux: false,
-                shellType: "cmd",
+                shellType: "powershell",
             });
 
             await executeInit({});

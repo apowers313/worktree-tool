@@ -15,9 +15,7 @@ export class WorktreeError extends Error {
         this.name = "WorktreeError";
 
         // Maintains proper stack trace for where error was thrown
-        if (Error.captureStackTrace) {
-            Error.captureStackTrace(this, WorktreeError);
-        }
+        Error.captureStackTrace(this, WorktreeError);
     }
 }
 

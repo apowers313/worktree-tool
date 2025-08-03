@@ -2,12 +2,11 @@ import {Command} from "commander";
 import {readFileSync} from "fs";
 import {join} from "path";
 
-import {GlobalOptions} from "../core/types";
 import {getLogger} from "../utils/logger";
 
 // Read package.json to get version
 const packageJsonPath = join(__dirname, "../../package.json");
-const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf-8"));
+const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf-8")) as {version: string};
 
 /**
  * Create and configure the CLI program

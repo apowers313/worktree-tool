@@ -20,7 +20,9 @@ jest.mock("../../../src/platform/tmux");
 jest.mock("../../../src/utils/logger");
 
 describe("Create Command", () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let mockLogger: any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let mockGit: any;
     let mockExit: jest.SpyInstance;
 
@@ -34,6 +36,8 @@ describe("Create Command", () => {
             success: jest.fn(),
             error: jest.fn(),
             warn: jest.fn(),
+            log: jest.fn(),
+            progress: jest.fn().mockReturnValue(jest.fn()),
             getLevel: jest.fn().mockReturnValue("normal"),
         };
         (logger.getLogger as jest.Mock).mockReturnValue(mockLogger);
@@ -43,6 +47,10 @@ describe("Create Command", () => {
             isGitRepository: jest.fn().mockResolvedValue(true),
             hasCommits: jest.fn().mockResolvedValue(true),
             createWorktree: jest.fn().mockResolvedValue(undefined),
+            getMainBranch: jest.fn().mockResolvedValue("main"),
+            listWorktrees: jest.fn().mockResolvedValue([]),
+            getRepoRoot: jest.fn().mockResolvedValue("/repo"),
+            branchExists: jest.fn().mockResolvedValue(false),
         };
         (git.createGit as jest.Mock).mockReturnValue(mockGit);
 

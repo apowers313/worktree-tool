@@ -47,8 +47,8 @@ describe("Create Command Integration Tests", () => {
                         stdio: "pipe",
                         timeout: 3000,
                     });
-                } catch(error: any) {
-                    expect(error.stderr).toContain("not initialized");
+                } catch {
+                    expect((error as {stderr?: string}).stderr).toContain("not initialized");
                 }
             });
         });
@@ -70,7 +70,7 @@ describe("Create Command Integration Tests", () => {
                         stdio: "pipe",
                         timeout: 5000, // Short timeout since shell spawning will hang
                     });
-                } catch(error: any) {
+                } catch {
                     // Expected to timeout due to shell spawning, but worktree should be created
                 }
 
@@ -172,9 +172,9 @@ describe("Create Command Integration Tests", () => {
                         stdio: "pipe",
                         timeout: 3000,
                     });
-                } catch(error: any) {
-                    expect(error.stderr).toContain("No commits found");
-                    expect(error.stderr).toContain("Please make at least one commit");
+                } catch {
+                    expect((error as {stderr?: string}).stderr).toContain("No commits found");
+                    expect((error as {stderr?: string}).stderr).toContain("Please make at least one commit");
                 }
             });
         });
@@ -210,8 +210,8 @@ describe("Create Command Integration Tests", () => {
                         stdio: "pipe",
                         timeout: 3000,
                     });
-                } catch(error: any) {
-                    expect(error.stderr).toContain("Not in a git repository");
+                } catch {
+                    expect((error as {stderr?: string}).stderr).toContain("Not in a git repository");
                 }
             });
         });
@@ -241,8 +241,8 @@ describe("Create Command Integration Tests", () => {
                         stdio: "pipe",
                         timeout: 3000,
                     });
-                } catch(error: any) {
-                    expect(error.stderr).toContain("required");
+                } catch {
+                    expect((error as {stderr?: string}).stderr).toContain("required");
                 }
             });
         });
@@ -272,8 +272,8 @@ describe("Create Command Integration Tests", () => {
                         stdio: "pipe",
                         timeout: 3000,
                     });
-                } catch(error: any) {
-                    expect(error.stderr).toContain("invalid characters");
+                } catch {
+                    expect((error as {stderr?: string}).stderr).toContain("invalid characters");
                 }
             });
         });
@@ -359,8 +359,8 @@ describe("Create Command Integration Tests", () => {
                         stdio: "pipe",
                         timeout: 3000,
                     });
-                } catch(error: any) {
-                    expect(error.stderr).toContain("Failed to create worktree");
+                } catch {
+                    expect((error as {stderr?: string}).stderr).toContain("Failed to create worktree");
                 }
             });
         });

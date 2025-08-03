@@ -20,7 +20,7 @@ export class Git {
         try {
             const result = await this.git.checkIsRepo();
             return result;
-        } catch(error) {
+        } catch {
             return false;
         }
     }

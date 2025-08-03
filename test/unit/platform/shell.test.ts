@@ -56,10 +56,6 @@ describe("Shell Operations", () => {
             expect(getShellCommand("powershell")).toBe("powershell");
         });
 
-        it("should return correct command for cmd", () => {
-            expect(getShellCommand("cmd")).toBe("cmd");
-        });
-
         it("should throw error for unsupported shell type", () => {
             expect(() => getShellCommand("fish" as ShellType)).toThrow(PlatformError);
             expect(() => getShellCommand("fish" as ShellType)).toThrow("Unsupported shell type: fish");
@@ -77,10 +73,6 @@ describe("Shell Operations", () => {
 
         it("should return NoExit args for powershell", () => {
             expect(getShellArgs("powershell")).toEqual(["-NoExit"]);
-        });
-
-        it("should return /K args for cmd", () => {
-            expect(getShellArgs("cmd")).toEqual(["/K"]);
         });
 
         it("should throw error for unsupported shell type", () => {
@@ -102,11 +94,6 @@ describe("Shell Operations", () => {
         it("should set prompt function for powershell", () => {
             const result = setShellPrompt("powershell", "my-feature");
             expect(result).toEqual(["function prompt { \"[my-feature] > \" }"]);
-        });
-
-        it("should set prompt command for cmd", () => {
-            const result = setShellPrompt("cmd", "my-feature");
-            expect(result).toEqual(["prompt [my-feature] > "]);
         });
 
         it("should handle worktree names with spaces", () => {
@@ -175,24 +162,6 @@ describe("Shell Operations", () => {
                 "-NoExit",
                 "-Command",
                 "function prompt { \"[my-feature] > \" }",
-            ], {
-                stdio: "inherit",
-                cwd: "/test/dir",
-                env: expect.any(Object),
-                detached: false,
-            });
-        });
-
-        it("should spawn cmd with correct arguments", async() => {
-            setTimeout(() => mockChild.emit("exit", 0), 10);
-
-            const promise = spawnShell("/test/dir", "cmd", "my-feature");
-
-            await promise;
-
-            expect(mockSpawn).toHaveBeenCalledWith("cmd", [
-                "/K",
-                "prompt [my-feature] > ",
             ], {
                 stdio: "inherit",
                 cwd: "/test/dir",

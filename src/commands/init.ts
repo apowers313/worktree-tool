@@ -67,15 +67,15 @@ export async function executeInit(options: InitOptions): Promise<void> {
         logger.verbose("Detecting project configuration...");
 
         // Detect project name if not provided
-        const projectName = options.projectName || await detectProjectName();
+        const projectName = options.projectName ?? await detectProjectName();
         logger.verbose(`Project name: ${projectName}`);
 
         // Detect main branch if not provided
-        const mainBranch = options.mainBranch || await git.getMainBranch();
+        const mainBranch = options.mainBranch ?? await git.getMainBranch();
         logger.verbose(`Main branch: ${mainBranch}`);
 
         // Use default base directory if not provided
-        const baseDir = options.baseDir || ".worktrees";
+        const baseDir = options.baseDir ?? ".worktrees";
         logger.verbose(`Base directory: ${baseDir}`);
 
         // Determine tmux setting
@@ -88,7 +88,7 @@ export async function executeInit(options: InitOptions): Promise<void> {
             // Auto-detect tmux availability
             const platform = detectPlatform();
             tmux = platform.hasTmux;
-            logger.verbose(`Tmux auto-detected: ${tmux}`);
+            logger.verbose(`Tmux auto-detected: ${String(tmux)}`);
         }
 
         // Create configuration

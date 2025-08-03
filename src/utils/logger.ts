@@ -27,6 +27,7 @@ export class Logger {
    */
     success(message: string): void {
         if (this.level !== "quiet") {
+            // eslint-disable-next-line no-console
             console.log(chalk.green(`✓ ${message}`));
         }
     }
@@ -36,6 +37,7 @@ export class Logger {
    */
     info(message: string): void {
         if (this.level !== "quiet") {
+            // eslint-disable-next-line no-console
             console.log(chalk.blue(`ℹ ${message}`));
         }
     }
@@ -54,6 +56,7 @@ export class Logger {
    */
     verbose(message: string): void {
         if (this.level === "verbose") {
+            // eslint-disable-next-line no-console
             console.log(chalk.gray(`• ${message}`));
         }
     }
@@ -63,6 +66,7 @@ export class Logger {
    */
     log(message: string): void {
         if (this.level !== "quiet") {
+            // eslint-disable-next-line no-console
             console.log(message);
         }
     }
@@ -73,6 +77,7 @@ export class Logger {
    */
     progress(message: string): () => void {
         if (this.level === "quiet") {
+            // eslint-disable-next-line @typescript-eslint/no-empty-function
             return () => {};
         }
 
@@ -105,6 +110,7 @@ let instance: Logger;
  * Get or create the logger instance
  */
 export function getLogger(options?: GlobalOptions): Logger {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!instance || options) {
         instance = new Logger(options);
     }

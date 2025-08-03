@@ -26,6 +26,7 @@ describe("Init Command Integration Tests", () => {
 
     describe("Basic Initialization", () => {
         it("should fail in non-git directory", async() => {
+            // eslint-disable-next-line @typescript-eslint/require-await
             await withTestSandbox(async(sandbox) => {
                 // Change to workspace (non-git directory)
                 process.chdir(sandbox.getWorkspacePath());
@@ -44,8 +45,8 @@ describe("Init Command Integration Tests", () => {
                         encoding: "utf-8",
                         stdio: "pipe",
                     });
-                } catch(error: any) {
-                    expect(error.stderr).toContain("Not in a git repository");
+                } catch {
+                    expect((error as {stderr?: string}).stderr).toContain("Not in a git repository");
                 }
             });
         });
@@ -69,7 +70,7 @@ describe("Init Command Integration Tests", () => {
                 // Verify config was created with detected branch
                 const config = JSON.parse(
                     await fs.readFile(".worktree-config.json", "utf-8"),
-                );
+                ) as {version?: string, mainBranch?: string, baseDir?: string, projectName?: string, tmux?: boolean};
                 // Should be 'main' with sandbox config
                 expect(config.mainBranch).toBe("main");
             });
@@ -95,7 +96,7 @@ describe("Init Command Integration Tests", () => {
                 // Verify detected branch
                 const config = JSON.parse(
                     await fs.readFile(".worktree-config.json", "utf-8"),
-                );
+                ) as {version?: string, mainBranch?: string, baseDir?: string, projectName?: string, tmux?: boolean};
                 expect(config.mainBranch).toBe("master");
             });
         });
@@ -114,7 +115,7 @@ describe("Init Command Integration Tests", () => {
                 // Verify detected branch
                 const config = JSON.parse(
                     await fs.readFile(".worktree-config.json", "utf-8"),
-                );
+                ) as {version?: string, mainBranch?: string, baseDir?: string, projectName?: string, tmux?: boolean};
                 expect(config.mainBranch).toBe("main");
             });
         });
@@ -168,7 +169,7 @@ describe("Init Command Integration Tests", () => {
                 // Verify detected main branch
                 const config = JSON.parse(
                     await fs.readFile(".worktree-config.json", "utf-8"),
-                );
+                ) as {version?: string, mainBranch?: string, baseDir?: string, projectName?: string, tmux?: boolean};
                 expect(config.mainBranch).toBe("main");
             });
         });
@@ -188,7 +189,7 @@ describe("Init Command Integration Tests", () => {
                 // Verify detected master branch
                 const config = JSON.parse(
                     await fs.readFile(".worktree-config.json", "utf-8"),
-                );
+                ) as {version?: string, mainBranch?: string, baseDir?: string, projectName?: string, tmux?: boolean};
                 expect(config.mainBranch).toBe("master");
             });
         });
@@ -210,7 +211,7 @@ describe("Init Command Integration Tests", () => {
                 // Verify custom project name
                 const config = JSON.parse(
                     await fs.readFile(".worktree-config.json", "utf-8"),
-                );
+                ) as {version?: string, mainBranch?: string, baseDir?: string, projectName?: string, tmux?: boolean};
                 expect(config.projectName).toBe("my-custom-project");
             });
         });
@@ -230,7 +231,7 @@ describe("Init Command Integration Tests", () => {
                 // Verify custom base dir
                 const config = JSON.parse(
                     await fs.readFile(".worktree-config.json", "utf-8"),
-                );
+                ) as {version?: string, mainBranch?: string, baseDir?: string, projectName?: string, tmux?: boolean};
                 expect(config.baseDir).toBe(".wt");
 
                 // Verify gitignore updated with custom dir
@@ -254,7 +255,7 @@ describe("Init Command Integration Tests", () => {
                 // Verify custom main branch
                 const config = JSON.parse(
                     await fs.readFile(".worktree-config.json", "utf-8"),
-                );
+                ) as {version?: string, mainBranch?: string, baseDir?: string, projectName?: string, tmux?: boolean};
                 expect(config.mainBranch).toBe("develop");
             });
         });
@@ -317,8 +318,8 @@ describe("Init Command Integration Tests", () => {
                         encoding: "utf-8",
                         stdio: "pipe",
                     });
-                } catch(error: any) {
-                    expect(error.stderr).toContain("already initialized");
+                } catch {
+                    expect((error as {stderr?: string}).stderr).toContain("already initialized");
                 }
             });
         });
@@ -344,8 +345,8 @@ describe("Init Command Integration Tests", () => {
                         encoding: "utf-8",
                         stdio: "pipe",
                     });
-                } catch(error: any) {
-                    expect(error.stderr).toContain("Cannot specify both");
+                } catch {
+                    expect((error as {stderr?: string}).stderr).toContain("Cannot specify both");
                 }
             });
         });
@@ -469,7 +470,7 @@ describe("Init Command Integration Tests", () => {
                 // Verify config
                 const config = JSON.parse(
                     await fs.readFile(".worktree-config.json", "utf-8"),
-                );
+                ) as {version?: string, mainBranch?: string, baseDir?: string, projectName?: string, tmux?: boolean};
                 expect(config.projectName).toBe("worktree-tool");
             });
         });
@@ -512,7 +513,7 @@ describe("Init Command Integration Tests", () => {
                 // Verify project name is preserved
                 const config = JSON.parse(
                     await fs.readFile(".worktree-config.json", "utf-8"),
-                );
+                ) as {version?: string, mainBranch?: string, baseDir?: string, projectName?: string, tmux?: boolean};
                 expect(config.projectName).toBe(specialName);
             });
         });

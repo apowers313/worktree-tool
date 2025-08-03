@@ -28,7 +28,7 @@ export function isInsideTmux(): boolean {
  */
 export function canAttachToTmux(): boolean {
     // Check if stdout is a TTY (terminal)
-    return process.stdout.isTTY;
+    return !!process.stdout.isTTY;
 }
 
 /**
@@ -113,7 +113,7 @@ export async function renameTmuxWindow(
         await execFileAsync("tmux", [
             "rename-window",
             "-t",
-            `${sanitizedSession}:${windowIndex}`,
+            `${sanitizedSession}:${String(windowIndex)}`,
             sanitizedName,
         ]);
     } catch(error) {
@@ -135,7 +135,7 @@ export async function tmuxSendKeys(
         await execFileAsync("tmux", [
             "send-keys",
             "-t",
-            `${sanitizedSession}:${windowIndex}`,
+            `${sanitizedSession}:${String(windowIndex)}`,
             command,
             "Enter",
         ]);

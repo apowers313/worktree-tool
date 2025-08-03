@@ -36,7 +36,7 @@ export async function createTestRepoInSandbox(
     sandbox: TestSandbox,
     name?: string,
 ): Promise<SimpleGit & {path: string}> {
-    const repoDir = path.join(sandbox.getWorkspacePath(), name || "repo");
+    const repoDir = path.join(sandbox.getWorkspacePath(), name ?? "repo");
     await fs.mkdir(repoDir, {recursive: true});
 
     const git = simpleGit(repoDir);
@@ -51,6 +51,7 @@ export async function createTestRepoInSandbox(
  * @deprecated Use createTestRepoWithCommitInSandbox with TestSandbox instead
  */
 export async function createTestRepoWithCommit(dir: string): Promise<SimpleGit> {
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
     const git = await createTestRepo(dir);
 
     // Create initial file
@@ -71,7 +72,7 @@ export async function createTestRepoWithCommitInSandbox(
     sandbox: TestSandbox,
     name?: string,
 ): Promise<SimpleGit & {path: string}> {
-    const repoDir = path.join(sandbox.getWorkspacePath(), name || "repo");
+    const repoDir = path.join(sandbox.getWorkspacePath(), name ?? "repo");
     await fs.mkdir(repoDir, {recursive: true});
 
     const git = simpleGit(repoDir);
@@ -97,6 +98,7 @@ export async function createTestRepoWithBranches(
     dir: string,
     branches: string[],
 ): Promise<SimpleGit> {
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
     const git = await createTestRepoWithCommit(dir);
 
     // Create additional branches
@@ -236,6 +238,7 @@ export async function createNestedGitRepo(
     const nestedPath = path.join(parentDir, subDir);
     await fs.mkdir(nestedPath, {recursive: true});
 
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
     return createTestRepoWithCommit(nestedPath);
 }
 

@@ -74,7 +74,7 @@ export class TestSandbox {
             "core.filemode": "true",
             "credential.helper": "",
             // Merge with user-provided config
-            ... (this.options.gitConfig || {}),
+            ... (this.options.gitConfig ?? {}),
         };
 
         // Build config file content
@@ -90,9 +90,7 @@ export class TestSandbox {
             const option = parts.slice(1).join(".");
 
             if (section && option) {
-                if (!configSections[section]) {
-                    configSections[section] = {};
-                }
+                configSections[section] ??= {};
 
                 configSections[section][option] = value;
             }
@@ -179,6 +177,7 @@ export class TestSandbox {
                 console.warn(`Failed to remove temp directory ${this.tempDir}:`, error);
             }
         } else if (this.tempDir && this.options.preserveOnError) {
+            // eslint-disable-next-line no-console
             console.log(`Sandbox preserved at: ${this.tempDir}`);
         }
     }
@@ -231,7 +230,7 @@ export async function createIsolatedTestRepo(
     sandbox: TestSandbox,
     name?: string,
 ): Promise<SimpleGit & {path: string}> {
-    const repoDir = path.join(sandbox.getWorkspacePath(), name || "repo");
+    const repoDir = path.join(sandbox.getWorkspacePath(), name ?? "repo");
     await fs.mkdir(repoDir, {recursive: true});
 
     const git = simpleGit(repoDir);

@@ -69,7 +69,7 @@ interface WorktreeConfig {
 interface Platform {
   os: 'windows' | 'macos' | 'linux';
   hasTmux: boolean;
-  shellType: 'bash' | 'zsh' | 'powershell' | 'cmd';
+  shellType: 'bash' | 'zsh' | 'powershell';
 }
 ```
 
@@ -252,7 +252,7 @@ describe('init command (self-hosting)', () => {
 
 **Implementation notes:**
 - Copy the prompt-setting logic from ../wtt project
-- Support bash, zsh, powershell, and cmd prompts
+- Support bash, zsh, and powershell prompts
 - Set prompt to show `[${worktreeName}] > ` format
 
 **Tests:**

@@ -14,12 +14,12 @@ export async function detectProjectName(dir: string = process.cwd()): Promise<st
     if (packageJsonPath) {
         try {
             const content = await fs.readFile(packageJsonPath, "utf-8");
-            const packageData = JSON.parse(content);
+            const packageData = JSON.parse(content) as {name?: unknown};
 
             if (packageData.name && typeof packageData.name === "string") {
                 return sanitizeProjectName(packageData.name);
             }
-        } catch(error) {
+        } catch {
             // Ignore errors reading/parsing package.json
             // We'll fall back to directory name
         }
@@ -38,6 +38,7 @@ export async function detectProjectName(dir: string = process.cwd()): Promise<st
 export async function findPackageJson(dir: string): Promise<string | null> {
     let currentDir = path.resolve(dir);
 
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     while (true) {
         const packageJsonPath = path.join(currentDir, "package.json");
 
@@ -68,7 +69,7 @@ export async function findPackageJson(dir: string): Promise<string | null> {
 export function sanitizeProjectName(name: string): string {
     // Remove npm scope if present (e.g., @scope/package -> package)
     if (name.startsWith("@") && name.includes("/")) {
-        name = name.split("/")[1] || name;
+        name = name.split("/")[1] ?? name;
     }
 
     // Replace problematic characters with hyphens
@@ -125,6 +126,7 @@ export function isValidGitBranchName(name: string): boolean {
     }
 
     // Check for invalid characters
+    // eslint-disable-next-line no-control-regex, no-useless-escape
     const invalidChars = /[\x00-\x1F\x7F ~^:?*\[\\]/;
     if (invalidChars.test(name)) {
         return false;
@@ -143,6 +145,7 @@ export function sanitizeGitBranchName(name: string): string {
     let sanitized = name.replace(/\s+/g, "-");
 
     // Remove invalid characters
+    // eslint-disable-next-line no-control-regex, no-useless-escape
     sanitized = sanitized.replace(/[\x00-\x1F\x7F~^:?*\[\]\\!]/g, "");
 
     // Remove leading dots

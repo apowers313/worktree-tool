@@ -4,7 +4,7 @@ import {Command} from "commander";
 /**
  * Execute the help command
  */
-export async function executeHelp(commandName?: string, program?: Command): Promise<void> {
+export function executeHelp(commandName?: string, program?: Command): void {
     if (commandName && program) {
         const command = program.commands.find((cmd) => cmd.name() === commandName);
         if (command) {
@@ -45,5 +45,7 @@ export function createHelpCommand(program: Command): Command {
     return new Command("help")
         .argument("[command]", "Command to show help for")
         .description("Display help information")
-        .action((commandName?: string) => executeHelp(commandName, program));
+        .action((commandName?: string) => {
+            executeHelp(commandName, program);
+        });
 }
