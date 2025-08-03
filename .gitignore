@@ -6,6 +6,7 @@ dist/
 *.js
 !jest.config*.js
 !commitlint.config.js
+!test/mocks/*.js
 *.js.map
 *.d.ts
 *.d.ts.map
