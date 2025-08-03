@@ -47,7 +47,7 @@ describe("Create Command Integration Tests", () => {
                         stdio: "pipe",
                         timeout: 3000,
                     });
-                } catch {
+                } catch(error) {
                     expect((error as {stderr?: string}).stderr).toContain("not initialized");
                 }
             });
