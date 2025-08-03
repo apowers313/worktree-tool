@@ -45,7 +45,7 @@ describe("Init Command Integration Tests", () => {
                         encoding: "utf-8",
                         stdio: "pipe",
                     });
-                } catch {
+                } catch(error) {
                     expect((error as {stderr?: string}).stderr).toContain("Not in a git repository");
                 }
             });
