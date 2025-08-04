@@ -4,7 +4,7 @@ import {createGit, Git} from "../../../src/core/git";
 import {GitError} from "../../../src/utils/errors";
 
 // Mock simple-git
-jest.mock("simple-git");
+vi.mock("simple-git");
 
 describe("Git Wrapper", () => {
     let mockGit: any;
@@ -12,15 +12,15 @@ describe("Git Wrapper", () => {
 
     beforeEach(() => {
     // Reset mocks
-        jest.clearAllMocks();
+        vi.clearAllMocks();
 
         // Create mock git instance
         mockGit = {
-            checkIsRepo: jest.fn(),
-            status: jest.fn(),
-            branch: jest.fn(),
-            raw: jest.fn(),
-            revparse: jest.fn(),
+            checkIsRepo: vi.fn(),
+            status: vi.fn(),
+            branch: vi.fn(),
+            raw: vi.fn(),
+            revparse: vi.fn(),
         };
 
         // Make simpleGit return our mock

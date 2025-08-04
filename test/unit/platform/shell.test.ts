@@ -12,28 +12,28 @@ import {
 import {PlatformError} from "../../../src/utils/errors";
 
 // Mock child_process and fs
-jest.mock("child_process");
-jest.mock("fs", () => ({
+vi.mock("child_process");
+vi.mock("fs", () => ({
     promises: {
-        writeFile: jest.fn(),
-        unlink: jest.fn(),
+        writeFile: vi.fn(),
+        unlink: vi.fn(),
     },
 }));
-const mockSpawn = spawn as jest.MockedFunction<typeof spawn>;
-const mockWriteFile = fs.writeFile as jest.MockedFunction<typeof fs.writeFile>;
-const mockUnlink = fs.unlink as jest.MockedFunction<typeof fs.unlink>;
+const mockSpawn = spawn <typeof spawn>;
+const mockWriteFile = fs.writeFile <typeof fs.writeFile>;
+const mockUnlink = fs.unlink <typeof fs.unlink>;
 
 describe("Shell Operations", () => {
     let mockChild: EventEmitter & {
-        on: jest.Mock;
+        on: any;
         stdio?: string;
     };
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
 
         mockChild = new EventEmitter() as any;
-        mockChild.on = jest.fn((event, callback) => {
+        mockChild.on = vi.fn((event, callback) => {
             EventEmitter.prototype.on.call(mockChild, event, callback);
             return mockChild;
         });

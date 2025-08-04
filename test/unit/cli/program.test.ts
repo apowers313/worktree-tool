@@ -1,10 +1,11 @@
 import {Command} from "commander";
+import {vi} from "vitest";
 
 import {createProgram} from "../../../src/cli/program";
 
 // Mock fs module
-jest.mock("fs", () => ({
-    readFileSync: jest.fn(() => JSON.stringify({
+vi.mock("fs", () => ({
+    readFileSync: vi.fn(() => JSON.stringify({
         name: "worktree-tool",
         version: "0.1.0",
         description: "Test package",
@@ -12,11 +13,11 @@ jest.mock("fs", () => ({
 }));
 
 // Mock logger
-jest.mock("../../../src/utils/logger", () => ({
-    getLogger: jest.fn(() => ({
-        info: jest.fn(),
-        error: jest.fn(),
-        verbose: jest.fn(),
+vi.mock("../../../src/utils/logger", () => ({
+    getLogger: vi.fn(() => ({
+        info: vi.fn(),
+        error: vi.fn(),
+        verbose: vi.fn(),
     })),
 }));
 
@@ -71,7 +72,7 @@ describe("CLI Program", () => {
             // Capture output
             const output: string[] = [];
             const originalWrite = process.stdout.write;
-            process.stdout.write = jest.fn((str: string) => {
+            process.stdout.write = vi.fn((str: string) => {
                 output.push(str);
                 return true;
             }) as any;

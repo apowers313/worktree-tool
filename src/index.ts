@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-import {program} from "./cli/program";
-import {createCommand} from "./commands/create";
-import {createHelpCommand} from "./commands/help";
-import {initCommand} from "./commands/init";
+import {program} from "./cli/program.js";
+import {createCommand} from "./commands/create.js";
+import {createHelpCommand} from "./commands/help.js";
+import {initCommand} from "./commands/init.js";
 
 // Register commands
 program.addCommand(initCommand);

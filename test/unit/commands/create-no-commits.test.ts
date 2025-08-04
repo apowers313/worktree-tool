@@ -4,31 +4,31 @@ import * as git from "../../../src/core/git";
 import * as logger from "../../../src/utils/logger";
 
 // Mock all dependencies
-jest.mock("../../../src/core/git");
-jest.mock("../../../src/core/config");
-jest.mock("../../../src/utils/logger");
+vi.mock("../../../src/core/git");
+vi.mock("../../../src/core/config");
+vi.mock("../../../src/utils/logger");
 
 describe("Create Command - No Commits", () => {
     let mockLogger: any;
     let mockGit: any;
-    let mockExit: jest.SpyInstance;
+    let mockExit: any;
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
 
         // Mock logger
         mockLogger = {
-            verbose: jest.fn(),
-            info: jest.fn(),
-            success: jest.fn(),
-            error: jest.fn(),
-            warn: jest.fn(),
-            getLevel: jest.fn().mockReturnValue("normal"),
+            verbose: vi.fn(),
+            info: vi.fn(),
+            success: vi.fn(),
+            error: vi.fn(),
+            warn: vi.fn(),
+            getLevel: vi.fn().mockReturnValue("normal"),
         };
-        (logger.getLogger as jest.Mock).mockReturnValue(mockLogger);
+        vi.mocked(logger.getLogger).mockReturnValue(mockLogger);
 
         // Mock config
-        (config.loadConfig as jest.Mock).mockResolvedValue({
+        vi.mocked(config.loadConfig).mockResolvedValue({
             version: "1.0.0",
             projectName: "test-project",
             mainBranch: "main",
@@ -38,14 +38,14 @@ describe("Create Command - No Commits", () => {
 
         // Mock git
         mockGit = {
-            isGitRepository: jest.fn().mockResolvedValue(true),
-            hasCommits: jest.fn().mockResolvedValue(false),
-            createWorktree: jest.fn(),
+            isGitRepository: vi.fn().mockResolvedValue(true),
+            hasCommits: vi.fn().mockResolvedValue(false),
+            createWorktree: vi.fn(),
         };
-        (git.createGit as jest.Mock).mockReturnValue(mockGit);
+        vi.mocked(git.createGit).mockReturnValue(mockGit);
 
         // Mock process.exit
-        mockExit = jest.spyOn(process, "exit").mockImplementation(() => {
+        mockExit = vi.spyOn(process, "exit").mockImplementation(() => {
             throw new Error("process.exit");
         });
     });

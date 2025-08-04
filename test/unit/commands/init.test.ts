@@ -1,3 +1,5 @@
+import {vi} from "vitest";
+
 import {executeInit, initCommand, validateInitOptions} from "../../../src/commands/init";
 import * as config from "../../../src/core/config";
 import * as git from "../../../src/core/git";
@@ -7,11 +9,11 @@ import * as logger from "../../../src/utils/logger";
 import * as project from "../../../src/utils/project";
 
 // Mock all dependencies
-jest.mock("../../../src/core/git");
-jest.mock("../../../src/core/config");
-jest.mock("../../../src/utils/project");
-jest.mock("../../../src/platform/detector");
-jest.mock("../../../src/utils/logger");
+vi.mock("../../../src/core/git");
+vi.mock("../../../src/core/config");
+vi.mock("../../../src/utils/project");
+vi.mock("../../../src/platform/detector");
+vi.mock("../../../src/utils/logger");
 
 describe("Init Command", () => {
     let mockLogger: any;
@@ -19,32 +21,32 @@ describe("Init Command", () => {
     let mockExit: any;
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
 
         // Mock logger
         mockLogger = {
-            verbose: jest.fn(),
-            info: jest.fn(),
-            success: jest.fn(),
-            error: jest.fn(),
-            log: jest.fn(),
-            warn: jest.fn(),
-            getLevel: jest.fn().mockReturnValue("normal"),
+            verbose: vi.fn(),
+            info: vi.fn(),
+            success: vi.fn(),
+            error: vi.fn(),
+            log: vi.fn(),
+            warn: vi.fn(),
+            getLevel: vi.fn().mockReturnValue("normal"),
         };
-        (logger.getLogger as jest.Mock).mockReturnValue(mockLogger);
+        vi.mocked(logger.getLogger).mockReturnValue(mockLogger);
 
         // Mock git
         mockGit = {
-            isGitRepository: jest.fn().mockResolvedValue(true),
-            getMainBranch: jest.fn().mockResolvedValue("main"),
+            isGitRepository: vi.fn().mockResolvedValue(true),
+            getMainBranch: vi.fn().mockResolvedValue("main"),
         };
-        (git.createGit as jest.Mock).mockReturnValue(mockGit);
+        vi.mocked(git.createGit).mockReturnValue(mockGit);
 
         // Mock config functions
-        (config.configExists as jest.Mock).mockResolvedValue(false);
-        (config.saveConfig as jest.Mock).mockResolvedValue(undefined);
-        (config.updateGitignore as jest.Mock).mockResolvedValue(undefined);
-        (config.getDefaultConfig as jest.Mock).mockReturnValue({
+        vi.mocked(config.configExists).mockResolvedValue(false);
+        vi.mocked(config.saveConfig).mockResolvedValue(undefined);
+        vi.mocked(config.updateGitignore).mockResolvedValue(undefined);
+        vi.mocked(config.getDefaultConfig).mockReturnValue({
             version: "1.0.0",
             projectName: "test-project",
             mainBranch: "main",
@@ -53,17 +55,17 @@ describe("Init Command", () => {
         });
 
         // Mock project detection
-        (project.detectProjectName as jest.Mock).mockResolvedValue("detected-project");
+        vi.mocked(project.detectProjectName).mockResolvedValue("detected-project");
 
         // Mock platform detection
-        (detector.detectPlatform as jest.Mock).mockReturnValue({
+        vi.mocked(detector.detectPlatform).mockReturnValue({
             os: "linux",
             hasTmux: true,
             shellType: "bash",
         });
 
         // Mock process.exit
-        mockExit = jest.spyOn(process, "exit").mockImplementation(() => {
+        mockExit = vi.spyOn(process, "exit").mockImplementation(() => {
             throw new Error("process.exit");
         });
     });
@@ -226,7 +228,7 @@ describe("Init Command", () => {
         });
 
         it("should auto-detect tmux as disabled", async() => {
-            (detector.detectPlatform as jest.Mock).mockReturnValue({
+            vi.mocked(detector.detectPlatform).mockReturnValue({
                 os: "windows",
                 hasTmux: false,
                 shellType: "powershell",
@@ -242,7 +244,7 @@ describe("Init Command", () => {
         });
 
         it("should fail if already initialized", async() => {
-            (config.configExists as jest.Mock).mockResolvedValue(true);
+            vi.mocked(config.configExists).mockResolvedValue(true);
 
             await expect(executeInit({})).rejects.toThrow("process.exit");
 
@@ -270,7 +272,7 @@ describe("Init Command", () => {
         });
 
         it("should handle unexpected errors", async() => {
-            (config.saveConfig as jest.Mock).mockRejectedValue(new Error("Disk full"));
+            vi.mocked(config.saveConfig).mockRejectedValue(new Error("Disk full"));
 
             await expect(executeInit({})).rejects.toThrow("process.exit");
 

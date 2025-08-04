@@ -15,7 +15,7 @@ const WTT_BIN = path.resolve(__dirname, "../../dist/index.js");
 
 describe("End-to-End Full Flow Tests", () => {
     // Increase timeout for e2e tests
-    jest.setTimeout(30000);
+    vi.setConfig({testTimeout: 30000}); // Replace jest.setTimeout(30000);
 
     // Ensure tests are not running in a worktree
     beforeAll(async() => {
@@ -133,22 +133,20 @@ describe("End-to-End Full Flow Tests", () => {
 
     describe("Help Command Integration", () => {
         it("should display help without errors", async() => {
-            // eslint-disable-next-line @typescript-eslint/require-await
             await withTestSandbox(async() => {
                 const helpOutput = execSyncWithoutTmux(`node "${WTT_BIN}" help`, {encoding: "utf-8"});
 
-                expect(helpOutput).toContain("wtt - Git Worktree Management Tool");
-                expect(helpOutput).toContain("USAGE:");
-                expect(helpOutput).toContain("COMMANDS:");
+                expect(helpOutput).toContain("wtt - Git worktree management tool");
+                expect(helpOutput).toContain("Usage:");
+                expect(helpOutput).toContain("Commands:");
                 expect(helpOutput).toContain("init");
                 expect(helpOutput).toContain("create");
                 expect(helpOutput).toContain("help");
-                expect(helpOutput).toContain("EXAMPLES:");
+                expect(helpOutput).toContain("Examples:");
             });
         });
 
         it("should show command-specific help", async() => {
-            // eslint-disable-next-line @typescript-eslint/require-await
             await withTestSandbox(async() => {
                 const initHelp = execSyncWithoutTmux(`node "${WTT_BIN}" init --help`, {encoding: "utf-8"});
                 expect(initHelp).toContain("Initialize a repository for worktree management");

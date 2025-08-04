@@ -4,13 +4,13 @@ import {
     configExists,
     getDefaultConfig,
     saveConfig,
-    updateGitignore} from "../core/config";
-import {createGit} from "../core/git";
-import {InitOptions} from "../core/types";
-import {detectPlatform} from "../platform/detector";
-import {ConfigError, GitError, ValidationError} from "../utils/errors";
-import {getLogger} from "../utils/logger";
-import {detectProjectName} from "../utils/project";
+    updateGitignore} from "../core/config.js";
+import {createGit} from "../core/git.js";
+import {InitOptions} from "../core/types.js";
+import {detectPlatform} from "../platform/detector.js";
+import {ConfigError, GitError, ValidationError} from "../utils/errors.js";
+import {getLogger} from "../utils/logger.js";
+import {detectProjectName} from "../utils/project.js";
 
 /**
  * Validate init command options

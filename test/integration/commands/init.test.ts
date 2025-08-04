@@ -17,7 +17,7 @@ const WTT_BIN = path.resolve(__dirname, "../../../dist/index.js");
 
 describe("Init Command Integration Tests", () => {
     // Increase timeout for integration tests
-    jest.setTimeout(30000);
+    vi.setConfig({testTimeout: 30000}); // Replace jest.setTimeout(30000);
 
     // Ensure tests are not running in a worktree
     beforeAll(async() => {
@@ -26,7 +26,6 @@ describe("Init Command Integration Tests", () => {
 
     describe("Basic Initialization", () => {
         it("should fail in non-git directory", async() => {
-            // eslint-disable-next-line @typescript-eslint/require-await
             await withTestSandbox(async(sandbox) => {
                 // Change to workspace (non-git directory)
                 process.chdir(sandbox.getWorkspacePath());
@@ -318,7 +317,7 @@ describe("Init Command Integration Tests", () => {
                         encoding: "utf-8",
                         stdio: "pipe",
                     });
-                } catch {
+                } catch(error) {
                     expect((error as {stderr?: string}).stderr).toContain("already initialized");
                 }
             });
@@ -345,7 +344,7 @@ describe("Init Command Integration Tests", () => {
                         encoding: "utf-8",
                         stdio: "pipe",
                     });
-                } catch {
+                } catch(error) {
                     expect((error as {stderr?: string}).stderr).toContain("Cannot specify both");
                 }
             });

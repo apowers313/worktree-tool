@@ -1,4 +1,5 @@
 import {promises as fs} from "fs";
+import {vi} from "vitest";
 
 import {
     detectProjectName,
@@ -8,10 +9,10 @@ import {
     sanitizeProjectName} from "../../../src/utils/project";
 
 // Mock fs module
-jest.mock("fs", () => ({
+vi.mock("fs", () => ({
     promises: {
-        readFile: jest.fn(),
-        access: jest.fn(),
+        readFile: vi.fn(),
+        access: vi.fn(),
     },
 }));
 
@@ -20,12 +21,12 @@ describe("Project Detection", () => {
     const originalCwd = process.cwd();
 
     beforeEach(() => {
-        jest.clearAllMocks();
-        jest.spyOn(process, "cwd").mockReturnValue("/home/user/my-project");
+        vi.clearAllMocks();
+        vi.spyOn(process, "cwd").mockReturnValue("/home/user/my-project");
     });
 
     afterEach(() => {
-        jest.spyOn(process, "cwd").mockReturnValue(originalCwd);
+        vi.spyOn(process, "cwd").mockReturnValue(originalCwd);
     });
 
     describe("detectProjectName", () => {

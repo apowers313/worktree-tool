@@ -6,19 +6,19 @@ import {getLogger, Logger} from "../../../src/utils/logger";
 chalk.level = 1;
 
 describe("Logger", () => {
-    let consoleLogSpy: jest.SpyInstance;
-    let consoleErrorSpy: jest.SpyInstance;
-    let consoleWarnSpy: jest.SpyInstance;
-    let stdoutWriteSpy: jest.SpyInstance;
+    let consoleLogSpy: any;
+    let consoleErrorSpy: any;
+    let consoleWarnSpy: any;
+    let stdoutWriteSpy: any;
 
     beforeEach(() => {
-        consoleLogSpy = jest.spyOn(console, "log").mockImplementation();
-        consoleErrorSpy = jest.spyOn(console, "error").mockImplementation();
-        consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation();
-        stdoutWriteSpy = jest.spyOn(process.stdout, "write").mockImplementation(() => true);
+        consoleLogSpy = vi.spyOn(console, "log").mockImplementation();
+        consoleErrorSpy = vi.spyOn(console, "error").mockImplementation();
+        consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation();
+        stdoutWriteSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
 
         // Clear singleton instance
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+
         (global as any).loggerInstance = undefined;
     });
 
@@ -177,18 +177,18 @@ describe("Logger", () => {
 
     describe("Progress Indicator", () => {
         beforeEach(() => {
-            jest.useFakeTimers();
+            vi.useFakeTimers();
         });
 
         afterEach(() => {
-            jest.useRealTimers();
+            vi.useRealTimers();
         });
 
         it("should show progress indicator in normal mode", () => {
             const logger = new Logger();
             const stop = logger.progress("Testing progress");
 
-            jest.advanceTimersByTime(80);
+            vi.advanceTimersByTime(80);
 
             expect(stdoutWriteSpy).toHaveBeenCalledWith(
                 expect.stringContaining("Testing progress"),
@@ -201,7 +201,7 @@ describe("Logger", () => {
             const logger = new Logger({quiet: true});
             const stop = logger.progress("Testing progress");
 
-            jest.advanceTimersByTime(80);
+            vi.advanceTimersByTime(80);
 
             expect(stdoutWriteSpy).not.toHaveBeenCalled();
 

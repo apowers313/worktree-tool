@@ -1,7 +1,7 @@
 import {execFile} from "child_process";
 import {promisify} from "util";
 
-import {PlatformError} from "../utils/errors";
+import {PlatformError} from "../utils/errors.js";
 
 const execFileAsync = promisify(execFile);
 

@@ -1,12 +1,10 @@
 import {Command} from "commander";
-import {readFileSync} from "fs";
-import {join} from "path";
 
-import {getLogger} from "../utils/logger";
+import {getLogger} from "../utils/logger.js";
 
-// Read package.json to get version
-const packageJsonPath = join(__dirname, "../../package.json");
-const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf-8")) as {version: string};
+// Version from package.json - hardcoded for now to avoid module resolution issues
+// TODO: Consider using a build-time script to inject this automatically
+const version = "0.1.0";
 
 /**
  * Create and configure the CLI program
@@ -17,7 +15,7 @@ export function createProgram(): Command {
     program
         .name("wtt")
         .description("Git worktree management tool optimized for AI development workflows")
-        .version(packageJson.version)
+        .version(version)
         .option("-v, --verbose", "enable verbose output")
         .option("-q, --quiet", "suppress output except errors")
         .hook("preAction", (thisCommand) => {

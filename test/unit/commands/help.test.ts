@@ -1,23 +1,24 @@
 import chalk from "chalk";
 import {Command} from "commander";
+import {vi} from "vitest";
 
 import {createHelpCommand, executeHelp} from "../../../src/commands/help";
 
 describe("help command", () => {
-    let consoleLogSpy: jest.SpyInstance;
-    let consoleErrorSpy: jest.SpyInstance;
-    let processExitSpy: jest.SpyInstance;
+    let consoleLogSpy: any;
+    let consoleErrorSpy: any;
+    let processExitSpy: any;
 
     beforeEach(() => {
-        consoleLogSpy = jest.spyOn(console, "log").mockImplementation();
-        consoleErrorSpy = jest.spyOn(console, "error").mockImplementation();
-        processExitSpy = jest.spyOn(process, "exit").mockImplementation(() => {
+        consoleLogSpy = vi.spyOn(console, "log").mockImplementation();
+        consoleErrorSpy = vi.spyOn(console, "error").mockImplementation();
+        processExitSpy = vi.spyOn(process, "exit").mockImplementation(() => {
             throw new Error("process.exit was called");
         });
     });
 
     afterEach(() => {
-        jest.restoreAllMocks();
+        vi.restoreAllMocks();
     });
 
     describe("executeHelp", () => {
@@ -40,7 +41,7 @@ describe("help command", () => {
                 .option("--project-name <name>", "Project name");
             program.addCommand(initCommand);
 
-            const helpInfoSpy = jest.spyOn(initCommand, "helpInformation").mockReturnValue("Init command help");
+            const helpInfoSpy = vi.spyOn(initCommand, "helpInformation").mockReturnValue("Init command help");
 
             executeHelp("init", program);
 

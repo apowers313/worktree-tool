@@ -15,7 +15,7 @@ const WTT_BIN = path.resolve(__dirname, "../../../dist/index.js");
 
 describe("Create Command Integration Tests", () => {
     // Increase timeout for integration tests
-    jest.setTimeout(30000);
+    vi.setConfig({testTimeout: 30000}); // Replace jest.setTimeout(30000);
 
     // Ensure tests are not running in a worktree
     beforeAll(async() => {
@@ -172,7 +172,7 @@ describe("Create Command Integration Tests", () => {
                         stdio: "pipe",
                         timeout: 3000,
                     });
-                } catch {
+                } catch(error) {
                     expect((error as {stderr?: string}).stderr).toContain("No commits found");
                     expect((error as {stderr?: string}).stderr).toContain("Please make at least one commit");
                 }
@@ -210,7 +210,7 @@ describe("Create Command Integration Tests", () => {
                         stdio: "pipe",
                         timeout: 3000,
                     });
-                } catch {
+                } catch(error) {
                     expect((error as {stderr?: string}).stderr).toContain("Not in a git repository");
                 }
             });
@@ -241,7 +241,7 @@ describe("Create Command Integration Tests", () => {
                         stdio: "pipe",
                         timeout: 3000,
                     });
-                } catch {
+                } catch(error) {
                     expect((error as {stderr?: string}).stderr).toContain("required");
                 }
             });
@@ -272,7 +272,7 @@ describe("Create Command Integration Tests", () => {
                         stdio: "pipe",
                         timeout: 3000,
                     });
-                } catch {
+                } catch(error) {
                     expect((error as {stderr?: string}).stderr).toContain("invalid characters");
                 }
             });
@@ -359,7 +359,7 @@ describe("Create Command Integration Tests", () => {
                         stdio: "pipe",
                         timeout: 3000,
                     });
-                } catch {
+                } catch(error) {
                     expect((error as {stderr?: string}).stderr).toContain("Failed to create worktree");
                 }
             });

@@ -33,7 +33,6 @@ describe("TestSandbox", () => {
     it("should set git environment variables", async() => {
         const originalEnv = {... process.env};
 
-        // eslint-disable-next-line @typescript-eslint/require-await
         await withTestSandbox(async(sandbox) => {
             // Check environment variables are set
             expect(process.env.GIT_CONFIG_GLOBAL).toBe(sandbox.getGitConfigPath());

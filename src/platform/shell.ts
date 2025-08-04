@@ -3,8 +3,8 @@ import {promises as fs} from "fs";
 import * as os from "os";
 import * as path from "path";
 
-import {ShellType} from "../core/types";
-import {PlatformError} from "../utils/errors";
+import {ShellType} from "../core/types.js";
+import {PlatformError} from "../utils/errors.js";
 
 /**
  * Get the shell command for the given shell type

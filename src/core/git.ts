@@ -1,7 +1,7 @@
 import simpleGit, {SimpleGit} from "simple-git";
 
-import {GitError} from "../utils/errors";
-import {WorktreeInfo} from "./types";
+import {GitError} from "../utils/errors.js";
+import {WorktreeInfo} from "./types.js";
 
 /**
  * Git operations wrapper for wtt

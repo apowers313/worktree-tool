@@ -12,25 +12,25 @@ import {WorktreeConfig} from "../../../src/core/types";
 import {ConfigError, FileSystemError} from "../../../src/utils/errors";
 
 // Mock fs module
-jest.mock("fs", () => ({
+vi.mock("fs", () => ({
     promises: {
-        readFile: jest.fn(),
-        writeFile: jest.fn(),
-        access: jest.fn(),
+        readFile: vi.fn(),
+        writeFile: vi.fn(),
+        access: vi.fn(),
     },
 }));
 
 describe("Config Management", () => {
-    const mockFs = fs as jest.Mocked<typeof fs>;
+    const mockFs = fs as any;
     const originalCwd = process.cwd();
 
     beforeEach(() => {
-        jest.clearAllMocks();
-        jest.spyOn(process, "cwd").mockReturnValue("/test/project");
+        vi.clearAllMocks();
+        vi.spyOn(process, "cwd").mockReturnValue("/test/project");
     });
 
     afterEach(() => {
-        jest.spyOn(process, "cwd").mockReturnValue(originalCwd);
+        vi.spyOn(process, "cwd").mockReturnValue(originalCwd);
     });
 
     describe("loadConfig", () => {

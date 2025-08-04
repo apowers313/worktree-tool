@@ -10,7 +10,7 @@ import {
 import {PlatformError} from "../../../src/utils/errors";
 
 // Mock child_process
-jest.mock("child_process");
+vi.mock("child_process");
 
 describe("Platform Detector", () => {
     const originalPlatform = process.platform;
@@ -18,7 +18,7 @@ describe("Platform Detector", () => {
 
     beforeEach(() => {
     // Reset mocks
-        jest.clearAllMocks();
+        vi.clearAllMocks();
 
         // Reset process.env
         process.env = {... originalEnv};
@@ -51,7 +51,7 @@ describe("Platform Detector", () => {
                 value: "darwin",
             });
             process.env.SHELL = "/bin/zsh";
-            (execSync as jest.Mock).mockImplementation(() => undefined);
+            (execSync as any).mockImplementation(() => undefined);
 
             const platform = detectPlatform();
 
@@ -64,7 +64,7 @@ describe("Platform Detector", () => {
                 value: "linux",
             });
             process.env.SHELL = "/bin/bash";
-            (execSync as jest.Mock).mockImplementation(() => {
+            (execSync as any).mockImplementation(() => {
                 throw new Error("tmux not found");
             });
 
@@ -105,7 +105,7 @@ describe("Platform Detector", () => {
             Object.defineProperty(process, "platform", {
                 value: "linux",
             });
-            (execSync as jest.Mock).mockImplementation(() => undefined);
+            (execSync as any).mockImplementation(() => undefined);
 
             const result = checkTmuxAvailable();
 
@@ -122,7 +122,7 @@ describe("Platform Detector", () => {
             Object.defineProperty(process, "platform", {
                 value: "linux",
             });
-            (execSync as jest.Mock).mockImplementation(() => {
+            (execSync as any).mockImplementation(() => {
                 throw new Error("Command not found");
             });
 

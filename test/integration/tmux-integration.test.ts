@@ -31,7 +31,7 @@ const describeTmux = isTmuxAvailable() ? describe : describe.skip;
 
 describeTmux("Tmux Integration Tests", () => {
     // Increase timeout for integration tests
-    jest.setTimeout(30000);
+    vi.setConfig({testTimeout: 30000}); // Replace jest.setTimeout(30000);
 
     beforeAll(async() => {
         await ensureNotInWorktree();

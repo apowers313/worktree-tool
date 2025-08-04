@@ -1,8 +1,8 @@
 import {promises as fs} from "fs";
 import * as path from "path";
 
-import {ConfigError, FileSystemError} from "../utils/errors";
-import {WorktreeConfig} from "./types";
+import {ConfigError, FileSystemError} from "../utils/errors.js";
+import {WorktreeConfig} from "./types.js";
 
 const CONFIG_FILENAME = ".worktree-config.json";
 const CONFIG_VERSION = "1.0.0";

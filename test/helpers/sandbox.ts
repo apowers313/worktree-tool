@@ -177,7 +177,6 @@ export class TestSandbox {
                 console.warn(`Failed to remove temp directory ${this.tempDir}:`, error);
             }
         } else if (this.tempDir && this.options.preserveOnError) {
-            // eslint-disable-next-line no-console
             console.log(`Sandbox preserved at: ${this.tempDir}`);
         }
     }

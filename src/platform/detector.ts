@@ -1,7 +1,7 @@
 import {execSync} from "child_process";
 
-import {Platform, ShellType} from "../core/types";
-import {PlatformError} from "../utils/errors";
+import {Platform, ShellType} from "../core/types.js";
+import {PlatformError} from "../utils/errors.js";
 
 /**
  * Detect the current platform information

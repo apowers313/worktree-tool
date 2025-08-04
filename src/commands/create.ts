@@ -3,11 +3,11 @@ import {Command} from "commander";
 import path from "path";
 import {promisify} from "util";
 
-import {loadConfig} from "../core/config";
-import {createGit} from "../core/git";
-import {CreateOptions} from "../core/types";
-import {detectPlatform} from "../platform/detector";
-import {spawnShell} from "../platform/shell";
+import {loadConfig} from "../core/config.js";
+import {createGit} from "../core/git.js";
+import {CreateOptions} from "../core/types.js";
+import {detectPlatform} from "../platform/detector.js";
+import {spawnShell} from "../platform/shell.js";
 import {
     canAttachToTmux,
     createTmuxSession,
@@ -17,11 +17,11 @@ import {
     renameTmuxWindow,
     sanitizeTmuxName,
     switchToTmuxWindow,
-    tmuxSessionExists} from "../platform/tmux";
-import {getLogger} from "../utils/logger";
+    tmuxSessionExists} from "../platform/tmux.js";
+import {getLogger} from "../utils/logger.js";
 
 const execFileAsync = promisify(execFile);
-import {ConfigError, GitError, ValidationError} from "../utils/errors";
+import {ConfigError, GitError, ValidationError} from "../utils/errors.js";
 
 /**
  * Sanitize worktree name for git branch compatibility

@@ -1,3 +1,5 @@
+import {vi} from "vitest";
+
 import {
     createCommand,
     executeCreate,
@@ -12,12 +14,12 @@ import {ValidationError} from "../../../src/utils/errors";
 import * as logger from "../../../src/utils/logger";
 
 // Mock all dependencies
-jest.mock("../../../src/core/git");
-jest.mock("../../../src/core/config");
-jest.mock("../../../src/platform/detector");
-jest.mock("../../../src/platform/shell");
-jest.mock("../../../src/platform/tmux");
-jest.mock("../../../src/utils/logger");
+vi.mock("../../../src/core/git");
+vi.mock("../../../src/core/config");
+vi.mock("../../../src/platform/detector");
+vi.mock("../../../src/platform/shell");
+vi.mock("../../../src/platform/tmux");
+vi.mock("../../../src/utils/logger");
 
 describe("Create Command", () => {
     let mockLogger: any;
@@ -25,35 +27,35 @@ describe("Create Command", () => {
     let mockExit: any;
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
 
         // Mock logger
         mockLogger = {
-            verbose: jest.fn(),
-            info: jest.fn(),
-            success: jest.fn(),
-            error: jest.fn(),
-            warn: jest.fn(),
-            log: jest.fn(),
-            progress: jest.fn().mockReturnValue(jest.fn()),
-            getLevel: jest.fn().mockReturnValue("normal"),
+            verbose: vi.fn(),
+            info: vi.fn(),
+            success: vi.fn(),
+            error: vi.fn(),
+            warn: vi.fn(),
+            log: vi.fn(),
+            progress: vi.fn().mockReturnValue(vi.fn()),
+            getLevel: vi.fn().mockReturnValue("normal"),
         };
-        (logger.getLogger as jest.Mock).mockReturnValue(mockLogger);
+        vi.mocked(logger.getLogger).mockReturnValue(mockLogger);
 
         // Mock git
         mockGit = {
-            isGitRepository: jest.fn().mockResolvedValue(true),
-            hasCommits: jest.fn().mockResolvedValue(true),
-            createWorktree: jest.fn().mockResolvedValue(undefined),
-            getMainBranch: jest.fn().mockResolvedValue("main"),
-            listWorktrees: jest.fn().mockResolvedValue([]),
-            getRepoRoot: jest.fn().mockResolvedValue("/repo"),
-            branchExists: jest.fn().mockResolvedValue(false),
+            isGitRepository: vi.fn().mockResolvedValue(true),
+            hasCommits: vi.fn().mockResolvedValue(true),
+            createWorktree: vi.fn().mockResolvedValue(undefined),
+            getMainBranch: vi.fn().mockResolvedValue("main"),
+            listWorktrees: vi.fn().mockResolvedValue([]),
+            getRepoRoot: vi.fn().mockResolvedValue("/repo"),
+            branchExists: vi.fn().mockResolvedValue(false),
         };
-        (git.createGit as jest.Mock).mockReturnValue(mockGit);
+        vi.mocked(git.createGit).mockReturnValue(mockGit);
 
         // Mock config
-        (config.loadConfig as jest.Mock).mockResolvedValue({
+        vi.mocked(config.loadConfig).mockResolvedValue({
             version: "1.0.0",
             projectName: "test-project",
             mainBranch: "main",
@@ -62,22 +64,22 @@ describe("Create Command", () => {
         });
 
         // Mock platform detection
-        (detector.detectPlatform as jest.Mock).mockReturnValue({
+        vi.mocked(detector.detectPlatform).mockReturnValue({
             os: "linux",
             hasTmux: false,
             shellType: "bash",
         });
 
         // Mock tmux
-        (tmux.isTmuxAvailable as jest.Mock).mockResolvedValue(false);
-        (tmux.isInsideTmux as jest.Mock).mockReturnValue(false);
-        (tmux.canAttachToTmux as jest.Mock).mockReturnValue(true);
+        vi.mocked(tmux.isTmuxAvailable).mockResolvedValue(false);
+        vi.mocked(tmux.isInsideTmux).mockReturnValue(false);
+        vi.mocked(tmux.canAttachToTmux).mockReturnValue(true);
 
         // Mock shell
-        (shell.spawnShell as jest.Mock).mockResolvedValue(undefined);
+        vi.mocked(shell.spawnShell).mockResolvedValue(undefined);
 
         // Mock process.exit
-        mockExit = jest.spyOn(process, "exit").mockImplementation(() => {
+        mockExit = vi.spyOn(process, "exit").mockImplementation(() => {
             throw new Error("process.exit");
         });
     });
@@ -175,7 +177,7 @@ describe("Create Command", () => {
             expect(mockGit.createWorktree).toHaveBeenCalledWith(".worktrees/my-feature", "my-feature");
 
             // Should spawn shell (tmux is disabled)
-            expect(shell.spawnShell).toHaveBeenCalledWith(expect.stringContaining(".worktrees/my-feature"), "bash", "my-feature");
+            expect(vi.mocked(shell.spawnShell)).toHaveBeenCalledWith(expect.stringContaining(".worktrees/my-feature"), "bash", "my-feature");
 
             // Should show success message
             expect(mockLogger.success).toHaveBeenCalledWith("Created worktree: my-feature");
@@ -183,56 +185,56 @@ describe("Create Command", () => {
 
         it("should create worktree with tmux integration when inside tmux", async() => {
             // Enable tmux
-            (config.loadConfig as jest.Mock).mockResolvedValue({
+            vi.mocked(config.loadConfig).mockResolvedValue({
                 version: "1.0.0",
                 projectName: "test-project",
                 mainBranch: "main",
                 baseDir: ".worktrees",
                 tmux: true,
             });
-            (tmux.isTmuxAvailable as jest.Mock).mockResolvedValue(true);
-            (tmux.isInsideTmux as jest.Mock).mockReturnValue(true); // Simulate being inside tmux
-            (tmux.canAttachToTmux as jest.Mock).mockReturnValue(true);
-            (tmux.tmuxSessionExists as jest.Mock).mockResolvedValue(true); // Session exists
-            (tmux.createTmuxSession as jest.Mock).mockResolvedValue(undefined);
-            (tmux.createTmuxWindow as jest.Mock).mockResolvedValue(undefined);
-            (tmux.switchToTmuxWindow as jest.Mock).mockResolvedValue(undefined);
-            (tmux.renameTmuxWindow as jest.Mock).mockResolvedValue(undefined);
-            (tmux.sanitizeTmuxName as jest.Mock).mockImplementation((name: string) => name.toLowerCase());
+            vi.mocked(tmux.isTmuxAvailable).mockResolvedValue(true);
+            vi.mocked(tmux.isInsideTmux).mockReturnValue(true); // Simulate being inside tmux
+            vi.mocked(tmux.canAttachToTmux).mockReturnValue(true);
+            vi.mocked(tmux.tmuxSessionExists).mockResolvedValue(true); // Session exists
+            vi.mocked(tmux.createTmuxSession).mockResolvedValue(undefined);
+            vi.mocked(tmux.createTmuxWindow).mockResolvedValue(undefined);
+            vi.mocked(tmux.switchToTmuxWindow).mockResolvedValue(undefined);
+            vi.mocked(tmux.renameTmuxWindow).mockResolvedValue(undefined);
+            vi.mocked(tmux.sanitizeTmuxName).mockImplementation((name: string) => name.toLowerCase());
 
             await executeCreate({name: "my-feature"});
 
             // Should create tmux window (session already exists)
-            expect(tmux.createTmuxWindow).toHaveBeenCalledWith("test-project", "my-feature", expect.stringContaining(".worktrees/my-feature"));
-            expect(tmux.switchToTmuxWindow).toHaveBeenCalledWith("test-project", "my-feature");
+            expect(vi.mocked(tmux.createTmuxWindow)).toHaveBeenCalledWith("test-project", "my-feature", expect.stringContaining(".worktrees/my-feature"));
+            expect(vi.mocked(tmux.switchToTmuxWindow)).toHaveBeenCalledWith("test-project", "my-feature");
 
             // Should not spawn shell
-            expect(shell.spawnShell).not.toHaveBeenCalled();
+            expect(vi.mocked(shell.spawnShell)).not.toHaveBeenCalled();
         });
 
         it("should create worktree and attempt attach when outside tmux with existing session", async() => {
             // Enable tmux
-            (config.loadConfig as jest.Mock).mockResolvedValue({
+            vi.mocked(config.loadConfig).mockResolvedValue({
                 version: "1.0.0",
                 projectName: "test-project",
                 mainBranch: "main",
                 baseDir: ".worktrees",
                 tmux: true,
             });
-            (tmux.isTmuxAvailable as jest.Mock).mockResolvedValue(true);
-            (tmux.isInsideTmux as jest.Mock).mockReturnValue(false); // Outside tmux
-            (tmux.canAttachToTmux as jest.Mock).mockReturnValue(true); // Can attach
-            (tmux.tmuxSessionExists as jest.Mock).mockResolvedValue(true); // Session exists
-            (tmux.createTmuxSession as jest.Mock).mockResolvedValue(undefined);
-            (tmux.createTmuxWindow as jest.Mock).mockResolvedValue(undefined);
-            (tmux.switchToTmuxWindow as jest.Mock).mockResolvedValue(undefined);
-            (tmux.renameTmuxWindow as jest.Mock).mockResolvedValue(undefined);
-            (tmux.sanitizeTmuxName as jest.Mock).mockImplementation((name: string) => name.toLowerCase());
+            vi.mocked(tmux.isTmuxAvailable).mockResolvedValue(true);
+            vi.mocked(tmux.isInsideTmux).mockReturnValue(false); // Outside tmux
+            vi.mocked(tmux.canAttachToTmux).mockReturnValue(true); // Can attach
+            vi.mocked(tmux.tmuxSessionExists).mockResolvedValue(true); // Session exists
+            vi.mocked(tmux.createTmuxSession).mockResolvedValue(undefined);
+            vi.mocked(tmux.createTmuxWindow).mockResolvedValue(undefined);
+            vi.mocked(tmux.switchToTmuxWindow).mockResolvedValue(undefined);
+            vi.mocked(tmux.renameTmuxWindow).mockResolvedValue(undefined);
+            vi.mocked(tmux.sanitizeTmuxName).mockImplementation((name: string) => name.toLowerCase());
 
             await executeCreate({name: "my-feature"});
 
             // Should create tmux window
-            expect(tmux.createTmuxWindow).toHaveBeenCalledWith("test-project", "my-feature", expect.stringContaining(".worktrees/my-feature"));
+            expect(vi.mocked(tmux.createTmuxWindow)).toHaveBeenCalledWith("test-project", "my-feature", expect.stringContaining(".worktrees/my-feature"));
 
             // Due to mocking complexity, tmux attach might fail and fall back to shell, which is acceptable behavior
             // The important thing is that tmux window creation was attempted
@@ -242,11 +244,11 @@ describe("Create Command", () => {
             await executeCreate({name: "My Feature Branch!"});
 
             expect(mockGit.createWorktree).toHaveBeenCalledWith(".worktrees/my-feature-branch", "my-feature-branch");
-            expect(shell.spawnShell).toHaveBeenCalledWith(expect.stringContaining(".worktrees/my-feature-branch"), "bash", "my-feature-branch");
+            expect(vi.mocked(shell.spawnShell)).toHaveBeenCalledWith(expect.stringContaining(".worktrees/my-feature-branch"), "bash", "my-feature-branch");
         });
 
         it("should fail when not initialized", async() => {
-            (config.loadConfig as jest.Mock).mockResolvedValue(null);
+            vi.mocked(config.loadConfig).mockResolvedValue(null);
 
             await expect(executeCreate({name: "feature"})).rejects.toThrow("process.exit");
 
@@ -281,83 +283,83 @@ describe("Create Command", () => {
 
         it("should fallback to shell when tmux fails", async() => {
             // Enable tmux but make it fail
-            (config.loadConfig as jest.Mock).mockResolvedValue({
+            vi.mocked(config.loadConfig).mockResolvedValue({
                 version: "1.0.0",
                 projectName: "test-project",
                 mainBranch: "main",
                 baseDir: ".worktrees",
                 tmux: true,
             });
-            (tmux.isTmuxAvailable as jest.Mock).mockResolvedValue(true);
-            (tmux.isInsideTmux as jest.Mock).mockReturnValue(false);
-            (tmux.canAttachToTmux as jest.Mock).mockReturnValue(true);
-            (tmux.tmuxSessionExists as jest.Mock).mockResolvedValue(false);
-            (tmux.createTmuxSession as jest.Mock).mockRejectedValue(new Error("Tmux failed"));
+            vi.mocked(tmux.isTmuxAvailable).mockResolvedValue(true);
+            vi.mocked(tmux.isInsideTmux).mockReturnValue(false);
+            vi.mocked(tmux.canAttachToTmux).mockReturnValue(true);
+            vi.mocked(tmux.tmuxSessionExists).mockResolvedValue(false);
+            vi.mocked(tmux.createTmuxSession).mockRejectedValue(new Error("Tmux failed"));
 
             await executeCreate({name: "my-feature"});
 
             expect(mockLogger.warn).toHaveBeenCalledWith("Tmux integration failed: Tmux failed");
-            expect(shell.spawnShell).toHaveBeenCalledWith(expect.stringContaining(".worktrees/my-feature"), "bash", "my-feature");
+            expect(vi.mocked(shell.spawnShell)).toHaveBeenCalledWith(expect.stringContaining(".worktrees/my-feature"), "bash", "my-feature");
         });
 
         it("should handle tmux when not in a TTY - new session", async() => {
             // Enable tmux but simulate non-TTY environment
-            (config.loadConfig as jest.Mock).mockResolvedValue({
+            vi.mocked(config.loadConfig).mockResolvedValue({
                 version: "1.0.0",
                 projectName: "test-project",
                 mainBranch: "main",
                 baseDir: ".worktrees",
                 tmux: true,
             });
-            (tmux.isTmuxAvailable as jest.Mock).mockResolvedValue(true);
-            (tmux.isInsideTmux as jest.Mock).mockReturnValue(false);
-            (tmux.canAttachToTmux as jest.Mock).mockReturnValue(false); // Can't attach
-            (tmux.tmuxSessionExists as jest.Mock).mockResolvedValue(false); // New session
-            (tmux.createTmuxSession as jest.Mock).mockResolvedValue(undefined);
-            (tmux.renameTmuxWindow as jest.Mock).mockResolvedValue(undefined);
-            (tmux.sanitizeTmuxName as jest.Mock).mockImplementation((name: string) => name.toLowerCase());
+            vi.mocked(tmux.isTmuxAvailable).mockResolvedValue(true);
+            vi.mocked(tmux.isInsideTmux).mockReturnValue(false);
+            vi.mocked(tmux.canAttachToTmux).mockReturnValue(false); // Can't attach
+            vi.mocked(tmux.tmuxSessionExists).mockResolvedValue(false); // New session
+            vi.mocked(tmux.createTmuxSession).mockResolvedValue(undefined);
+            vi.mocked(tmux.renameTmuxWindow).mockResolvedValue(undefined);
+            vi.mocked(tmux.sanitizeTmuxName).mockImplementation((name: string) => name.toLowerCase());
 
             await executeCreate({name: "my-feature"});
 
             // Should create tmux session but not try to attach
-            expect(tmux.createTmuxSession).toHaveBeenCalledWith("test-project", expect.stringContaining(".worktrees/my-feature"));
-            expect(tmux.renameTmuxWindow).toHaveBeenCalledWith("test-project", 0, "my-feature");
+            expect(vi.mocked(tmux.createTmuxSession)).toHaveBeenCalledWith("test-project", expect.stringContaining(".worktrees/my-feature"));
+            expect(vi.mocked(tmux.renameTmuxWindow)).toHaveBeenCalledWith("test-project", 0, "my-feature");
 
             // Should inform user about the session
             expect(mockLogger.info).toHaveBeenCalledWith("Created tmux session 'test-project' with window 'my-feature'");
             expect(mockLogger.info).toHaveBeenCalledWith("Run 'tmux attach -t test-project' to enter the session");
 
             // Should not spawn shell
-            expect(shell.spawnShell).not.toHaveBeenCalled();
+            expect(vi.mocked(shell.spawnShell)).not.toHaveBeenCalled();
         });
 
         it("should handle tmux when not in a TTY - existing session", async() => {
             // Enable tmux but simulate non-TTY environment with existing session
-            (config.loadConfig as jest.Mock).mockResolvedValue({
+            vi.mocked(config.loadConfig).mockResolvedValue({
                 version: "1.0.0",
                 projectName: "test-project",
                 mainBranch: "main",
                 baseDir: ".worktrees",
                 tmux: true,
             });
-            (tmux.isTmuxAvailable as jest.Mock).mockResolvedValue(true);
-            (tmux.isInsideTmux as jest.Mock).mockReturnValue(false);
-            (tmux.canAttachToTmux as jest.Mock).mockReturnValue(false); // Can't attach
-            (tmux.tmuxSessionExists as jest.Mock).mockResolvedValue(true); // Existing session
-            (tmux.createTmuxWindow as jest.Mock).mockResolvedValue(undefined);
-            (tmux.sanitizeTmuxName as jest.Mock).mockImplementation((name: string) => name.toLowerCase());
+            vi.mocked(tmux.isTmuxAvailable).mockResolvedValue(true);
+            vi.mocked(tmux.isInsideTmux).mockReturnValue(false);
+            vi.mocked(tmux.canAttachToTmux).mockReturnValue(false); // Can't attach
+            vi.mocked(tmux.tmuxSessionExists).mockResolvedValue(true); // Existing session
+            vi.mocked(tmux.createTmuxWindow).mockResolvedValue(undefined);
+            vi.mocked(tmux.sanitizeTmuxName).mockImplementation((name: string) => name.toLowerCase());
 
             await executeCreate({name: "my-feature"});
 
             // Should create tmux window but not try to attach
-            expect(tmux.createTmuxWindow).toHaveBeenCalledWith("test-project", "my-feature", expect.stringContaining(".worktrees/my-feature"));
+            expect(vi.mocked(tmux.createTmuxWindow)).toHaveBeenCalledWith("test-project", "my-feature", expect.stringContaining(".worktrees/my-feature"));
 
             // Should inform user about the window
             expect(mockLogger.info).toHaveBeenCalledWith("Created tmux window 'my-feature' in session 'test-project'");
             expect(mockLogger.info).toHaveBeenCalledWith("Run 'tmux attach -t test-project' to enter the session");
 
             // Should not spawn shell
-            expect(shell.spawnShell).not.toHaveBeenCalled();
+            expect(vi.mocked(shell.spawnShell)).not.toHaveBeenCalled();
         });
 
         it("should show verbose logs when verbose mode is enabled", async() => {

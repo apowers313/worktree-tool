@@ -1,6 +1,6 @@
 import chalk from "chalk";
 
-import {GlobalOptions, LogLevel} from "../core/types";
+import {GlobalOptions, LogLevel} from "../core/types.js";
 
 export class Logger {
     private level: LogLevel;
