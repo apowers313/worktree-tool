@@ -15,12 +15,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/yourusername/worktree-tool.git"
+    "url": "git+https://github.com/apowers313/worktree-tool.git"
   },
   "bugs": {
-    "url": "https://github.com/yourusername/worktree-tool/issues"
+    "url": "https://github.com/apowers313/worktree-tool/issues"
   },
-  "homepage": "https://github.com/yourusername/worktree-tool#readme",
+  "homepage": "https://github.com/apowers313/worktree-tool#readme",
   "scripts": {
     "build": "tsc && node scripts/add-shebang.js",
     "dev": "tsx src/index.ts",
@@ -42,7 +42,7 @@
     "development",
     "productivity"
   ],
-  "author": "Your Name <your.email@example.com>",
+  "author": "apowers313",
   "license": "MIT",
   "dependencies": {
     "chalk": "^5.5.0",
@@ -80,5 +80,9 @@
     "commitizen": {
       "path": "./node_modules/cz-conventional-changelog"
     }
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
   }
 }
