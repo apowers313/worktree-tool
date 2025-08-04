@@ -127,8 +127,8 @@ jobs:
           name: coverage-reports
           path: coverage/
 
-      - name: Upload to Codecov
-        uses: codecov/codecov-action@v3
+      - name: Upload to Coveralls
+        uses: coverallsapp/github-action@v2
         with:
-          files: ./coverage/lcov.info
-          fail_ci_if_error: false
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path-to-lcov: ./coverage/lcov.info

@@ -1,5 +1,8 @@
 # wtt - Git Worktree Tool
 
+[![Coverage Status](https://coveralls.io/repos/github/apowers313/worktree-tool/badge.svg?branch=master)](https://coveralls.io/github/apowers313/worktree-tool?branch=master)
+[![npm version](https://badge.fury.io/js/worktree-tool.svg)](https://www.npmjs.com/package/worktree-tool)
+
 A command-line tool for managing Git worktrees with integrated tmux/shell session management.
 
 ## Features
