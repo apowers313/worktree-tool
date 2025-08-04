@@ -174,10 +174,10 @@ describe("Create Command", () => {
             expect(mockGit.isGitRepository).toHaveBeenCalled();
 
             // Should create worktree
-            expect(mockGit.createWorktree).toHaveBeenCalledWith(".worktrees/my-feature", "my-feature");
+            expect(mockGit.createWorktree).toHaveBeenCalledWith(expect.stringMatching(/\.worktrees[\\/]my-feature/), "my-feature");
 
             // Should spawn shell (tmux is disabled)
-            expect(vi.mocked(shell.spawnShell)).toHaveBeenCalledWith(expect.stringContaining(".worktrees/my-feature"), "bash", "my-feature");
+            expect(vi.mocked(shell.spawnShell)).toHaveBeenCalledWith(expect.stringMatching(/\.worktrees[\\/]my-feature/), "bash", "my-feature");
 
             // Should show success message
             expect(mockLogger.success).toHaveBeenCalledWith("Created worktree: my-feature");
@@ -205,7 +205,7 @@ describe("Create Command", () => {
             await executeCreate({name: "my-feature"});
 
             // Should create tmux window (session already exists)
-            expect(vi.mocked(tmux.createTmuxWindow)).toHaveBeenCalledWith("test-project", "my-feature", expect.stringContaining(".worktrees/my-feature"));
+            expect(vi.mocked(tmux.createTmuxWindow)).toHaveBeenCalledWith("test-project", "my-feature", expect.stringMatching(/\.worktrees[\\/]my-feature/));
             expect(vi.mocked(tmux.switchToTmuxWindow)).toHaveBeenCalledWith("test-project", "my-feature");
 
             // Should not spawn shell
@@ -234,7 +234,7 @@ describe("Create Command", () => {
             await executeCreate({name: "my-feature"});
 
             // Should create tmux window
-            expect(vi.mocked(tmux.createTmuxWindow)).toHaveBeenCalledWith("test-project", "my-feature", expect.stringContaining(".worktrees/my-feature"));
+            expect(vi.mocked(tmux.createTmuxWindow)).toHaveBeenCalledWith("test-project", "my-feature", expect.stringMatching(/\.worktrees[\\/]my-feature/));
 
             // Due to mocking complexity, tmux attach might fail and fall back to shell, which is acceptable behavior
             // The important thing is that tmux window creation was attempted
@@ -243,8 +243,8 @@ describe("Create Command", () => {
         it("should sanitize worktree names", async() => {
             await executeCreate({name: "My Feature Branch!"});
 
-            expect(mockGit.createWorktree).toHaveBeenCalledWith(".worktrees/my-feature-branch", "my-feature-branch");
-            expect(vi.mocked(shell.spawnShell)).toHaveBeenCalledWith(expect.stringContaining(".worktrees/my-feature-branch"), "bash", "my-feature-branch");
+            expect(mockGit.createWorktree).toHaveBeenCalledWith(expect.stringMatching(/\.worktrees[\\/]my-feature-branch/), "my-feature-branch");
+            expect(vi.mocked(shell.spawnShell)).toHaveBeenCalledWith(expect.stringMatching(/\.worktrees[\\/]my-feature-branch/), "bash", "my-feature-branch");
         });
 
         it("should fail when not initialized", async() => {
@@ -299,7 +299,7 @@ describe("Create Command", () => {
             await executeCreate({name: "my-feature"});
 
             expect(mockLogger.warn).toHaveBeenCalledWith("Tmux integration failed: Tmux failed");
-            expect(vi.mocked(shell.spawnShell)).toHaveBeenCalledWith(expect.stringContaining(".worktrees/my-feature"), "bash", "my-feature");
+            expect(vi.mocked(shell.spawnShell)).toHaveBeenCalledWith(expect.stringMatching(/\.worktrees[\\/]my-feature/), "bash", "my-feature");
         });
 
         it("should handle tmux when not in a TTY - new session", async() => {
@@ -322,7 +322,7 @@ describe("Create Command", () => {
             await executeCreate({name: "my-feature"});
 
             // Should create tmux session but not try to attach
-            expect(vi.mocked(tmux.createTmuxSession)).toHaveBeenCalledWith("test-project", expect.stringContaining(".worktrees/my-feature"));
+            expect(vi.mocked(tmux.createTmuxSession)).toHaveBeenCalledWith("test-project", expect.stringMatching(/\.worktrees[\\/]my-feature/));
             expect(vi.mocked(tmux.renameTmuxWindow)).toHaveBeenCalledWith("test-project", 0, "my-feature");
 
             // Should inform user about the session
@@ -352,7 +352,7 @@ describe("Create Command", () => {
             await executeCreate({name: "my-feature"});
 
             // Should create tmux window but not try to attach
-            expect(vi.mocked(tmux.createTmuxWindow)).toHaveBeenCalledWith("test-project", "my-feature", expect.stringContaining(".worktrees/my-feature"));
+            expect(vi.mocked(tmux.createTmuxWindow)).toHaveBeenCalledWith("test-project", "my-feature", expect.stringMatching(/\.worktrees[\\/]my-feature/));
 
             // Should inform user about the window
             expect(mockLogger.info).toHaveBeenCalledWith("Created tmux window 'my-feature' in session 'test-project'");
@@ -368,7 +368,7 @@ describe("Create Command", () => {
             expect(mockLogger.verbose).toHaveBeenCalledWith("Loading configuration...");
             expect(mockLogger.verbose).toHaveBeenCalledWith("Checking git repository...");
             expect(mockLogger.verbose).toHaveBeenCalledWith("Creating worktree: my-feature");
-            expect(mockLogger.verbose).toHaveBeenCalledWith("Worktree path: .worktrees/my-feature");
+            expect(mockLogger.verbose).toHaveBeenCalledWith(expect.stringMatching(/Worktree path: \.worktrees[\\/]my-feature/));
             expect(mockLogger.verbose).toHaveBeenCalledWith("Worktree created successfully");
         });
     });

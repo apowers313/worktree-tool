@@ -12,7 +12,11 @@ describe("TestSandbox", () => {
         // Verify temp directory exists
         const tempDir = sandbox.getTempDir();
         expect(tempDir).toBeTruthy();
-        expect(tempDir).toMatch(/\/tmp\/wtt-test-/);
+        // Different OS have different temp directory structures:
+        // - Linux: /tmp/wtt-test-...
+        // - macOS: /var/folders/.../T/wtt-test-...
+        // - Windows: C:\Users\...\AppData\Local\Temp\wtt-test-...
+        expect(tempDir).toMatch(/wtt-test-/);
 
         const exists = await fs.access(tempDir).then(() => true).catch(() => false);
         expect(exists).toBe(true);

@@ -1,4 +1,5 @@
 import {promises as fs} from "fs";
+import * as path from "path";
 import {vi} from "vitest";
 
 import {
@@ -41,7 +42,7 @@ describe("Project Detection", () => {
 
             expect(name).toBe("awesome-project");
             expect(mockFs.readFile).toHaveBeenCalledWith(
-                "/home/user/my-project/package.json",
+                path.join("/home/user/my-project", "package.json"),
                 "utf-8",
             );
         });
@@ -112,8 +113,8 @@ describe("Project Detection", () => {
 
             const result = await findPackageJson("/home/user/project");
 
-            expect(result).toBe("/home/user/project/package.json");
-            expect(mockFs.access).toHaveBeenCalledWith("/home/user/project/package.json");
+            expect(result).toBe(path.join("/home/user/project", "package.json"));
+            expect(mockFs.access).toHaveBeenCalledWith(path.join("/home/user/project", "package.json"));
         });
 
         it("should find package.json in parent directory", async() => {
@@ -124,7 +125,7 @@ describe("Project Detection", () => {
 
             const result = await findPackageJson("/home/user/project/src/components");
 
-            expect(result).toBe("/home/user/project/package.json");
+            expect(result).toBe(path.join("/home/user/project", "package.json"));
         });
 
         it("should search up to root directory", async() => {
@@ -145,7 +146,7 @@ describe("Project Detection", () => {
 
             const result = await findPackageJson("/home");
 
-            expect(result).toBe("/package.json");
+            expect(result).toBe(path.join("/", "package.json"));
         });
 
         it("should return null if no package.json found", async() => {

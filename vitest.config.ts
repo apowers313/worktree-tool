@@ -17,7 +17,7 @@ export default defineConfig({
             'test/e2e'
         ],
         coverage: {
-            provider: 'c8',
+            provider: 'v8',
             reporter: ['text', 'lcov', 'html'],
             exclude: [
                 'node_modules',

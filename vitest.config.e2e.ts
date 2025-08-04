@@ -15,7 +15,7 @@ export default defineConfig({
         ],
         testTimeout: 60000,
         coverage: {
-            provider: 'c8',
+            provider: 'v8',
             reporter: ['text', 'lcov', 'html'],
             exclude: [
                 'node_modules',
