@@ -4,6 +4,7 @@ import {
     canAttachToTmux,
     createTmuxSession,
     createTmuxWindow,
+    getCurrentTmuxSession,
     isInsideTmux,
     isTmuxAvailable,
     killTmuxSession,
@@ -139,6 +140,54 @@ describe("Tmux Operations", () => {
         it("should return false when isTTY is undefined", () => {
             (process.stdout as any).isTTY = undefined;
             expect(canAttachToTmux()).toBe(false);
+        });
+    });
+
+    describe("getCurrentTmuxSession", () => {
+        const originalEnv = process.env;
+
+        afterEach(() => {
+            process.env = originalEnv;
+        });
+
+        it("should return null when not inside tmux", async() => {
+            delete process.env.TMUX;
+            const result = await getCurrentTmuxSession();
+            expect(result).toBeNull();
+        });
+
+        it("should return session name when inside tmux", async() => {
+            process.env.TMUX = "something";
+
+            mockExecFile.mockImplementation((_cmd: any, args: any, callback: any) => {
+                if (typeof callback === "function") {
+                    if (args[0] === "display-message" && args[1] === "-p" && args[2] === "#{session_name}") {
+                        callback(null, "my-session\n", "");
+                    } else {
+                        callback(new Error("Unexpected command"), "", "");
+                    }
+                }
+
+                return {} as any;
+            });
+
+            const result = await getCurrentTmuxSession();
+            expect(result).toBe("my-session");
+        });
+
+        it("should return null when tmux command fails", async() => {
+            process.env.TMUX = "something";
+
+            mockExecFile.mockImplementation((_cmd: any, _args: any, callback: any) => {
+                if (typeof callback === "function") {
+                    callback(new Error("tmux error"), "", "");
+                }
+
+                return {} as any;
+            });
+
+            const result = await getCurrentTmuxSession();
+            expect(result).toBeNull();
         });
     });
 
@@ -304,7 +353,60 @@ describe("Tmux Operations", () => {
     });
 
     describe("switchToTmuxWindow", () => {
-        it("should switch to window with sanitized names", async() => {
+        it("should switch to window with sanitized names when inside same session", async() => {
+            // Mock being inside tmux
+            process.env.TMUX = "something";
+
+            mockExecFile.mockImplementation((_cmd: any, args: any, callback: any) => {
+                if (typeof callback === "function") {
+                    // Return current session name for display-message command
+                    if (args[0] === "display-message") {
+                        callback(null, "my-session\n", "");
+                    } else {
+                        callback(null, "", "");
+                    }
+                }
+
+                return {} as any;
+            });
+
+            await switchToTmuxWindow("My Session", "My Window");
+
+            expect(mockExecFile).toHaveBeenCalledWith("tmux", ["display-message", "-p", "#{session_name}"], expect.any(Function));
+            expect(mockExecFile).toHaveBeenCalledWith("tmux", ["select-window", "-t", "my-session:My Window"], expect.any(Function));
+
+            delete process.env.TMUX;
+        });
+
+        it("should use switch-client when in different tmux session", async() => {
+            // Mock being inside tmux
+            process.env.TMUX = "something";
+
+            mockExecFile.mockImplementation((_cmd: any, args: any, callback: any) => {
+                if (typeof callback === "function") {
+                    // Return different session name for display-message command
+                    if (args[0] === "display-message") {
+                        callback(null, "different-session\n", "");
+                    } else {
+                        callback(null, "", "");
+                    }
+                }
+
+                return {} as any;
+            });
+
+            await switchToTmuxWindow("My Session", "My Window");
+
+            expect(mockExecFile).toHaveBeenCalledWith("tmux", ["display-message", "-p", "#{session_name}"], expect.any(Function));
+            expect(mockExecFile).toHaveBeenCalledWith("tmux", ["switch-client", "-t", "my-session:My Window"], expect.any(Function));
+
+            delete process.env.TMUX;
+        });
+
+        it("should attach when not inside tmux", async() => {
+            // Ensure we're not inside tmux
+            delete process.env.TMUX;
+
             mockExecFile.mockImplementation((_cmd: any, _args: any, callback: any) => {
                 if (typeof callback === "function") {
                     callback(null, "", "");
@@ -315,34 +417,7 @@ describe("Tmux Operations", () => {
 
             await switchToTmuxWindow("My Session", "My Window");
 
-            expect(mockExecFile).toHaveBeenCalledWith("tmux", ["select-window", "-t", "my-session:My Window"], expect.any(Function));
-        });
-
-        it("should try to attach session if select-window fails", async() => {
-            let callCount = 0;
-
-            mockExecFile.mockImplementation((_cmd: any, _args: any, callback: any) => {
-                if (typeof callback === "function") {
-                    callCount++;
-                    if (callCount === 1) {
-                        // First call (select-window) fails
-
-                        callback(new Error("Window not found"), "", "");
-                    } else {
-                        // Second call (attach-session) succeeds
-
-                        callback(null, "", "");
-                    }
-                }
-
-                return {} as any;
-            });
-
-            await switchToTmuxWindow("My Session", "My Window");
-
-            expect(mockExecFile).toHaveBeenCalledTimes(2);
-            expect(mockExecFile).toHaveBeenNthCalledWith(1, "tmux", ["select-window", "-t", "my-session:My Window"], expect.any(Function));
-            expect(mockExecFile).toHaveBeenNthCalledWith(2, "tmux", ["attach-session", "-t", "my-session"], expect.any(Function));
+            expect(mockExecFile).toHaveBeenCalledWith("tmux", ["attach-session", "-t", "my-session:My Window"], expect.any(Function));
         });
 
         it("should throw PlatformError when both attempts fail", async() => {

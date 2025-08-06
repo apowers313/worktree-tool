@@ -363,6 +363,35 @@ describe("Create Command", () => {
             expect(vi.mocked(shell.spawnShell)).not.toHaveBeenCalled();
         });
 
+        it("should switch to new window when creating second worktree inside tmux", async() => {
+            vi.mocked(config.loadConfig).mockResolvedValue({
+                ... config.DEFAULT_CONFIG,
+                version: "1.0.0",
+                projectName: "test-project",
+                mainBranch: "main",
+                baseDir: ".worktrees",
+                tmux: true,
+            });
+            vi.mocked(tmux.isTmuxAvailable).mockResolvedValue(true);
+            vi.mocked(tmux.isInsideTmux).mockReturnValue(true); // Inside tmux
+            vi.mocked(tmux.canAttachToTmux).mockReturnValue(true);
+            vi.mocked(tmux.tmuxSessionExists).mockResolvedValue(true); // Session already exists
+            vi.mocked(tmux.createTmuxWindow).mockResolvedValue(undefined);
+            vi.mocked(tmux.switchToTmuxWindow).mockResolvedValue(undefined);
+            vi.mocked(tmux.sanitizeTmuxName).mockImplementation((name: string) => name.toLowerCase());
+
+            await executeCreate({name: "second-feature"});
+
+            // Should create tmux window for second worktree
+            expect(vi.mocked(tmux.createTmuxWindow)).toHaveBeenCalledWith("test-project", "second-feature", expect.stringMatching(/\.worktrees[\\/]second-feature/));
+
+            // Should switch to the new window (this is the key behavior we're testing)
+            expect(vi.mocked(tmux.switchToTmuxWindow)).toHaveBeenCalledWith("test-project", "second-feature");
+
+            // Should not spawn shell
+            expect(vi.mocked(shell.spawnShell)).not.toHaveBeenCalled();
+        });
+
         it("should show verbose logs when verbose mode is enabled", async() => {
             await executeCreate({name: "my-feature"});
 

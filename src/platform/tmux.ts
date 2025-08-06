@@ -41,6 +41,22 @@ export function canAttachToTmux(): boolean {
 }
 
 /**
+ * Get the current tmux session name if inside tmux
+ */
+export async function getCurrentTmuxSession(): Promise<string | null> {
+    if (!isInsideTmux()) {
+        return null;
+    }
+
+    try {
+        const result = await execFileAsync("tmux", ["display-message", "-p", "#{session_name}"]);
+        return result.stdout.trim();
+    } catch {
+        return null;
+    }
+}
+
+/**
  * Check if tmux is available on the system
  */
 export async function isTmuxAvailable(): Promise<boolean> {
@@ -234,12 +250,18 @@ export async function switchToTmuxWindow(sessionName: string, windowName: string
         const sanitizedSession = sanitizeTmuxName(sessionName);
         const sanitizedWindow = sanitizeTmuxWindowName(windowName);
 
-        // First try to attach to the session if not already attached
-        try {
+        // Check if we're inside tmux and get current session
+        const currentSession = await getCurrentTmuxSession();
+
+        if (currentSession && currentSession === sanitizedSession) {
+            // We're in the same session, just switch windows
             await execFileAsync("tmux", ["select-window", "-t", `${sanitizedSession}:${sanitizedWindow}`]);
-        } catch {
-            // If that fails, try attaching to the session first
-            await execFileAsync("tmux", ["attach-session", "-t", sanitizedSession]);
+        } else if (currentSession) {
+            // We're in a different tmux session, use switch-client
+            await execFileAsync("tmux", ["switch-client", "-t", `${sanitizedSession}:${sanitizedWindow}`]);
+        } else {
+            // Not inside tmux, try to attach
+            await execFileAsync("tmux", ["attach-session", "-t", `${sanitizedSession}:${sanitizedWindow}`]);
         }
     } catch(error) {
         throw new PlatformError(`Failed to switch to tmux window: ${getErrorMessage(error)}`);
