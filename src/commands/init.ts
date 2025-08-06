@@ -5,7 +5,7 @@ import {
     getDefaultConfig,
     saveConfig,
     updateGitignore} from "../core/config.js";
-import {CONFIG_DEFAULTS, GIT_ERRORS, VALIDATION} from "../core/constants.js";
+import {CONFIG_DEFAULTS, GIT_ERRORS} from "../core/constants.js";
 import {createGit} from "../core/git.js";
 import {InitOptions} from "../core/types.js";
 import {detectPlatform} from "../platform/detector.js";
@@ -13,6 +13,7 @@ import {handleCommandError} from "../utils/error-handler.js";
 import {ConfigError, GitError, ValidationError} from "../utils/errors.js";
 import {getLogger} from "../utils/logger.js";
 import {detectProjectName} from "../utils/project.js";
+import {validateBranchName, validatePath, validateProjectName} from "../utils/validation.js";
 
 /**
  * Validate init command options
@@ -23,19 +24,21 @@ export function validateInitOptions(options: InitOptions): void {
         throw new ValidationError("Cannot specify both --enable-tmux and --disable-tmux");
     }
 
-    // Validate baseDir if provided
-    if (options.baseDir !== undefined && options.baseDir.trim() === "") {
-        throw new ValidationError(`Base directory ${VALIDATION.EMPTY_STRING_ERROR}`);
+    // Validate optional fields
+    if (options.baseDir !== undefined) {
+        validatePath(options.baseDir, "Base directory");
     }
 
-    // Validate projectName if provided
-    if (options.projectName !== undefined && options.projectName.trim() === "") {
-        throw new ValidationError(`Project name ${VALIDATION.EMPTY_STRING_ERROR}`);
+    if (options.projectName !== undefined) {
+        validateProjectName(options.projectName);
     }
 
-    // Validate mainBranch if provided
-    if (options.mainBranch !== undefined && options.mainBranch.trim() === "") {
-        throw new ValidationError(`Main branch ${VALIDATION.EMPTY_STRING_ERROR}`);
+    if (options.mainBranch !== undefined) {
+        try {
+            validateBranchName(options.mainBranch);
+        } catch {
+            throw new ValidationError("Main branch cannot be empty");
+        }
     }
 }
 

@@ -72,19 +72,15 @@ export function sanitizeProjectName(name: string): string {
         name = name.split("/")[1] ?? name;
     }
 
-    // Replace problematic characters with hyphens
-    // Keep only alphanumeric, hyphens, and underscores
-    let sanitized = name.replace(/[^a-zA-Z0-9\-_]/g, "-");
-
-    // Remove leading/trailing hyphens
-    sanitized = sanitized.replace(/^-+|-+$/g, "");
-
-    // Replace multiple consecutive hyphens with single hyphen
-    sanitized = sanitized.replace(/-+/g, "-");
+    // Custom sanitization - replace invalid chars with hyphens
+    let sanitized = name
+        .replace(/[^a-zA-Z0-9\-_]/g, "-") // Replace invalid chars (including dots) with hyphens
+        .replace(/^-+|-+$/g, "") // Remove leading/trailing hyphens
+        .replace(/-+/g, "-"); // Replace multiple hyphens with single
 
     // If empty after sanitization, use default
     if (!sanitized) {
-        sanitized = "project";
+        return "project";
     }
 
     // Ensure it doesn't start with a number (for tmux compatibility)
@@ -92,6 +88,7 @@ export function sanitizeProjectName(name: string): string {
         sanitized = `p-${sanitized}`;
     }
 
+    // Return as-is to preserve case (tests expect this)
     return sanitized;
 }
 

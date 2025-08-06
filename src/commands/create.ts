@@ -22,45 +22,23 @@ import {
 import {getLogger} from "../utils/logger.js";
 
 const execFileAsync = promisify(execFile);
-import {GIT_ERRORS, VALIDATION} from "../core/constants.js";
+import {GIT_ERRORS} from "../core/constants.js";
 import {getErrorMessage, handleCommandError} from "../utils/error-handler.js";
-import {ConfigError, GitError, ValidationError} from "../utils/errors.js";
+import {ConfigError, GitError} from "../utils/errors.js";
+import {sanitizeWorktreeName as sanitizeWorktreeNameUtil} from "../utils/sanitize.js";
+import {validateWorktreeName} from "../utils/validation.js";
 
 /**
  * Sanitize worktree name for git branch compatibility
  * Git branch names cannot contain certain characters
  */
-export function sanitizeWorktreeName(name: string): string {
-    return name
-        .trim()
-    // Replace spaces with hyphens
-        .replace(/\s+/g, "-")
-    // Remove characters that are invalid in git branch names (including forward slash)
-        .replace(/[~^:?*[\]\\!@#$%&*()+={}|"'<>`,/]/g, "")
-    // Remove leading/trailing dots and hyphens
-        .replace(/^[.-]+|[.-]+$/g, "")
-    // Ensure it doesn't start with a hyphen (git doesn't like that)
-        .replace(/^-+/, "")
-    // Convert to lowercase for consistency
-        .toLowerCase();
-}
+export const sanitizeWorktreeName = sanitizeWorktreeNameUtil;
 
 /**
  * Validate create command options
  */
 export function validateCreateOptions(options: CreateOptions): void {
-    if (!options.name || options.name.trim() === "") {
-        throw new ValidationError("Worktree name is required");
-    }
-
-    const sanitized = sanitizeWorktreeName(options.name);
-    if (sanitized === "") {
-        throw new ValidationError("Worktree name contains only invalid characters");
-    }
-
-    if (sanitized.length > VALIDATION.MAX_WORKTREE_NAME_LENGTH) {
-        throw new ValidationError(`Worktree name is too long (max ${String(VALIDATION.MAX_WORKTREE_NAME_LENGTH)} characters)`);
-    }
+    validateWorktreeName(options.name);
 }
 
 /**

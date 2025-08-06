@@ -4,6 +4,7 @@ import {promisify} from "util";
 import {ENV_VARS} from "../core/constants.js";
 import {getErrorMessage} from "../utils/error-handler.js";
 import {PlatformError} from "../utils/errors.js";
+import {sanitizeTmuxSession, sanitizeTmuxWindow} from "../utils/sanitize.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -11,21 +12,12 @@ const execFileAsync = promisify(execFile);
  * Sanitize name for tmux compatibility
  * Replace spaces with hyphens and remove special characters
  */
-export function sanitizeTmuxName(name: string): string {
-    return name
-        .replace(/\s+/g, "-") // Replace spaces with hyphens
-        .replace(/[^a-zA-Z0-9\-_]/g, "") // Remove special characters except hyphens and underscores
-        .toLowerCase(); // Convert to lowercase for consistency
-}
+export const sanitizeTmuxName = sanitizeTmuxSession;
 
 /**
  * Sanitize a window name for tmux - allows spaces and colons
  */
-export function sanitizeTmuxWindowName(name: string): string {
-    return name
-        .replace(/['"]/g, "") // Remove quotes that could break shell commands
-        .trim(); // Remove leading/trailing whitespace
-}
+export const sanitizeTmuxWindowName = sanitizeTmuxWindow;
 
 /**
  * Check if we're currently inside a tmux session

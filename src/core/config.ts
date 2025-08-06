@@ -3,6 +3,7 @@ import * as path from "path";
 
 import {getErrorMessage} from "../utils/error-handler.js";
 import {ConfigError, FileSystemError} from "../utils/errors.js";
+import {validateCommand} from "../utils/validation.js";
 import {WorktreeConfig} from "./types.js";
 
 const CONFIG_FILENAME = ".worktree-config.json";
@@ -25,8 +26,10 @@ export async function loadConfig(): Promise<WorktreeConfig | null> {
         // Validate commands if present
         if (data.commands) {
             for (const [name, command] of Object.entries(data.commands)) {
-                if (typeof command !== "string" || command.trim() === "") {
-                    throw new ConfigError(`Invalid command "${name}": command must be a non-empty string`);
+                try {
+                    validateCommand(name, command);
+                } catch(error) {
+                    throw new ConfigError(error instanceof Error ? error.message : "Invalid command");
                 }
             }
         }
