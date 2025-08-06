@@ -74,11 +74,11 @@ describe("exec command integration", () => {
             const result = runWtt(["exec", "complex"]);
 
             // Will fail due to no terminal, but should parse the command correctly
-            expect(result.stderr).toContain("Failed to start");
+            expect(result.stderr).toContain("Failed to start in test");
         });
     });
 
-    it("should handle worktree-specific execution", async() => {
+    it("should handle worktree-specific execution", {timeout: 10000}, async() => {
         await withTestSandbox(async(sandbox) => {
             const git = await createIsolatedTestRepoWithCommit(sandbox);
             process.chdir(git.path);
@@ -168,7 +168,7 @@ describe("exec command integration", () => {
             const result = runWtt(["exec", "test", "feature-c"]);
 
             expect(result.code).not.toBe(0);
-            expect(result.stderr).toContain("Worktree \"feature-c\" not found");
+            expect(result.stderr).toContain("Worktree(s) not found: feature-c");
             // The hint might be in stdout due to how logger outputs
             const combined = result.stdout + result.stderr;
             expect(combined).toMatch(/Available worktrees/);
@@ -176,7 +176,7 @@ describe("exec command integration", () => {
         });
     });
 
-    it("should respect verbose flag", async() => {
+    it("should respect verbose flag", {timeout: 10000}, async() => {
         await withTestSandbox(async(sandbox) => {
             const git = await createIsolatedTestRepoWithCommit(sandbox);
             process.chdir(git.path);

@@ -6,6 +6,18 @@ import {PlatformError} from "../utils/errors.js";
 const execAsync = promisify(execFile);
 
 /**
+ * Execute a command with a timeout
+ */
+async function execWithTimeout(
+    file: string,
+    args: string[],
+    options: {cwd?: string, timeout?: number} = {},
+): Promise<{stdout: string, stderr: string}> {
+    const timeout = options.timeout ?? 5000; // Default 5 second timeout
+    return execAsync(file, args, {... options, timeout});
+}
+
+/**
  * Interface for terminal opening strategies
  */
 export interface TerminalStrategy {
@@ -115,7 +127,7 @@ export class MacTerminalStrategy implements TerminalStrategy {
                 set custom title of front window to "${title}"
             end tell
         `;
-        await execAsync("osascript", ["-e", script]);
+        await execWithTimeout("osascript", ["-e", script]);
     }
 }
 
@@ -129,7 +141,7 @@ export class ITermStrategy implements TerminalStrategy {
         }
 
         try {
-            await execAsync("osascript", [
+            await execWithTimeout("osascript", [
                 "-e",
                 "tell application \"System Events\" to exists application process \"iTerm2\"",
             ]);
@@ -152,7 +164,7 @@ export class ITermStrategy implements TerminalStrategy {
                 end tell
             end tell
         `;
-        await execAsync("osascript", ["-e", script]);
+        await execWithTimeout("osascript", ["-e", script]);
     }
 }
 

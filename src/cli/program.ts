@@ -3,7 +3,7 @@ import {Command} from "commander";
 import {getLogger} from "../utils/logger.js";
 
 // Version from package.json - hardcoded for now to avoid module resolution issues
-// TODO: Consider using a build-time script to inject this automatically
+// Consider using a build-time script to inject this automatically
 const version = "0.1.0";
 
 /**

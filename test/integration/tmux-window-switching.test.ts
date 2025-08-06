@@ -3,6 +3,9 @@ import {existsSync, rmSync} from "fs";
 import path from "path";
 import {afterEach, beforeEach, describe, expect, it} from "vitest";
 
+// Path to the compiled wtt binary
+const WTT_BIN = path.resolve(__dirname, "../../dist/index.js");
+
 describe("Tmux Window Switching Integration", () => {
     const testProjectPath = path.join("/tmp", "test-tmux-switching");
     const originalCwd = process.cwd();
@@ -17,6 +20,10 @@ describe("Tmux Window Switching Integration", () => {
         execSync(`mkdir -p ${testProjectPath}`, {stdio: "ignore"});
         process.chdir(testProjectPath);
         execSync("git init", {stdio: "ignore"});
+
+        // Configure git for commits
+        execSync("git config user.email 'test@example.com'", {stdio: "ignore"});
+        execSync("git config user.name 'Test User'", {stdio: "ignore"});
     });
 
     afterEach(() => {
@@ -44,7 +51,7 @@ describe("Tmux Window Switching Integration", () => {
 
         try {
             // Initialize project
-            execSync("wtt init", {stdio: "ignore"});
+            execSync(`node ${WTT_BIN} init`, {stdio: "ignore"});
 
             // Make initial commit
             execSync("echo 'test' > test.txt", {stdio: "ignore"});
@@ -52,7 +59,7 @@ describe("Tmux Window Switching Integration", () => {
             execSync("git commit -m 'initial commit'", {stdio: "ignore"});
 
             // Create first worktree - this creates the tmux session
-            const result1 = execSync("wtt create first-feature", {
+            const result1 = execSync(`node ${WTT_BIN} create first-feature`, {
                 encoding: "utf8",
                 stdio: "pipe",
             });
@@ -66,7 +73,7 @@ describe("Tmux Window Switching Integration", () => {
             expect(sessions).toContain("test-tmux-switching");
 
             // Create second worktree - this should switch to the new window
-            const result2 = execSync("wtt create second-feature", {
+            const result2 = execSync(`node ${WTT_BIN} create second-feature`, {
                 encoding: "utf8",
                 stdio: "pipe",
             });
