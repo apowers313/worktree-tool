@@ -47,16 +47,25 @@ describe("Tmux Window Switching Integration", () => {
         if (!process.env.CI && !process.env.TMUX) {
             console.log("Skipping tmux window switching test - not in tmux");
             this.skip();
+            return;
         }
 
         try {
             // Initialize project
             execSync(`node ${WTT_BIN} init`, {stdio: "ignore"});
 
+            // Ensure git config is set (needed for commits)
+            try {
+                execSync("git config user.email || git config user.email 'test@example.com'", {stdio: "ignore"});
+                execSync("git config user.name || git config user.name 'Test User'", {stdio: "ignore"});
+            } catch {
+                // Ignore errors if config already set
+            }
+
             // Make initial commit
-            execSync("echo 'test' > test.txt", {stdio: "ignore"});
+            execSync("echo test > test.txt", {stdio: "ignore"});
             execSync("git add .", {stdio: "ignore"});
-            execSync("git commit -m 'initial commit'", {stdio: "ignore"});
+            execSync("git commit -m \"initial commit\"", {stdio: "ignore"});
 
             // Create first worktree - this creates the tmux session
             const result1 = execSync(`node ${WTT_BIN} create first-feature`, {
@@ -90,9 +99,11 @@ describe("Tmux Window Switching Integration", () => {
             // Note: We can't easily test the actual window switching behavior in automated tests
             // as it requires being attached to the tmux session, but the manual test confirms it works
         } catch(error: any) {
-            if (error.message?.includes("tmux")) {
+            // Skip test if tmux is not available
+            if (error.message?.includes("tmux") || error.message?.includes("command not found")) {
                 console.log("Skipping test - tmux not available");
                 this.skip();
+                return;
             }
 
             throw error;

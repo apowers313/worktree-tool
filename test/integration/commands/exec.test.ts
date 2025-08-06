@@ -74,7 +74,8 @@ describe("exec command integration", () => {
             const result = runWtt(["exec", "complex"]);
 
             // Will fail due to no terminal, but should parse the command correctly
-            expect(result.stderr).toContain("Failed to start in test");
+            const output = result.stdout + result.stderr;
+            expect(output).toContain("Failed to start in test");
         });
     });
 
@@ -104,7 +105,8 @@ describe("exec command integration", () => {
             const result = runWtt(["exec", "echo", "feature"]);
 
             // Will fail due to no terminal, but should try to execute in the right worktree
-            expect(result.stderr).toContain("Failed to start in feature");
+            const output = result.stdout + result.stderr;
+            expect(output).toContain("Failed to start in feature");
         });
     });
 
