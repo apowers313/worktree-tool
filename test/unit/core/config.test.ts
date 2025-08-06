@@ -87,6 +87,69 @@ describe("Config Management", () => {
             await expect(loadConfig()).rejects.toThrow(FileSystemError);
             await expect(loadConfig()).rejects.toThrow("Failed to read configuration");
         });
+
+        describe("commands validation in loadConfig", () => {
+            it("should load valid configuration with commands", async() => {
+                const config: WorktreeConfig = {
+                    version: "1.0.0",
+                    projectName: "test-project",
+                    mainBranch: "main",
+                    baseDir: ".worktrees",
+                    tmux: true,
+                    commands: {
+                        test: "npm test",
+                        build: "npm run build",
+                        lint: "npm run lint",
+                    },
+                };
+
+                mockFs.readFile.mockResolvedValue(JSON.stringify(config));
+
+                const result = await loadConfig();
+
+                expect(result).toEqual(config);
+            });
+
+            it("should throw ConfigError for empty command string", async() => {
+                const config = {
+                    version: "1.0.0",
+                    projectName: "test-project",
+                    mainBranch: "main",
+                    baseDir: ".worktrees",
+                    tmux: true,
+                    commands: {
+                        test: "npm test",
+                        empty: "",
+                        whitespace: "   ",
+                    },
+                };
+
+                mockFs.readFile.mockResolvedValue(JSON.stringify(config));
+
+                await expect(loadConfig()).rejects.toThrow(ConfigError);
+                await expect(loadConfig()).rejects.toThrow("Invalid command \"empty\": command must be a non-empty string");
+            });
+
+            it("should throw ConfigError for non-string command value", async() => {
+                const config = {
+                    version: "1.0.0",
+                    projectName: "test-project",
+                    mainBranch: "main",
+                    baseDir: ".worktrees",
+                    tmux: true,
+                    commands: {
+                        test: "npm test",
+                        invalid: 123,
+                    },
+                };
+
+                mockFs.readFile.mockResolvedValue(JSON.stringify(config));
+
+                // This will fail at validateConfig stage with generic error
+                await expect(loadConfig()).rejects.toThrow(ConfigError);
+                await expect(loadConfig()).rejects.toThrow("Invalid configuration format");
+            });
+        });
     });
 
     describe("saveConfig", () => {
@@ -129,6 +192,7 @@ describe("Config Management", () => {
                 mainBranch: "main",
                 baseDir: ".worktrees",
                 tmux: true,
+                commands: {},
             });
         });
     });
@@ -267,6 +331,87 @@ describe("Config Management", () => {
 
             expect(validateConfig(config1)).toBe(false);
             expect(validateConfig(config2)).toBe(false);
+        });
+
+        describe("commands validation", () => {
+            it("should accept valid commands", () => {
+                const config = {
+                    version: "1.0.0",
+                    projectName: "test",
+                    mainBranch: "main",
+                    baseDir: ".worktrees",
+                    tmux: true,
+                    commands: {
+                        "test": "npm test",
+                        "build": "npm run build",
+                        "complex-command": "echo 'test' | grep 't' > output.txt",
+                    },
+                };
+
+                expect(validateConfig(config)).toBe(true);
+            });
+
+            it("should accept config without commands", () => {
+                const config = {
+                    version: "1.0.0",
+                    projectName: "test",
+                    mainBranch: "main",
+                    baseDir: ".worktrees",
+                    tmux: true,
+                };
+
+                expect(validateConfig(config)).toBe(true);
+            });
+
+            it("should reject commands that is not an object", () => {
+                const config1 = {
+                    version: "1.0.0",
+                    projectName: "test",
+                    mainBranch: "main",
+                    baseDir: ".worktrees",
+                    tmux: true,
+                    commands: "invalid",
+                };
+
+                const config2 = {
+                    version: "1.0.0",
+                    projectName: "test",
+                    mainBranch: "main",
+                    baseDir: ".worktrees",
+                    tmux: true,
+                    commands: null,
+                };
+
+                const config3 = {
+                    version: "1.0.0",
+                    projectName: "test",
+                    mainBranch: "main",
+                    baseDir: ".worktrees",
+                    tmux: true,
+                    commands: ["npm test"],
+                };
+
+                expect(validateConfig(config1)).toBe(false);
+                expect(validateConfig(config2)).toBe(false);
+                expect(validateConfig(config3)).toBe(false);
+            });
+
+            it("should reject commands with non-string values", () => {
+                const config = {
+                    version: "1.0.0",
+                    projectName: "test",
+                    mainBranch: "main",
+                    baseDir: ".worktrees",
+                    tmux: true,
+                    commands: {
+                        test: "npm test",
+                        invalid: 123,
+                        alsoInvalid: null,
+                    },
+                };
+
+                expect(validateConfig(config)).toBe(false);
+            });
         });
     });
 

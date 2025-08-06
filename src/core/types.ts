@@ -16,6 +16,8 @@ export interface WorktreeConfig {
     baseDir: string;
     /** Whether tmux integration is enabled */
     tmux: boolean;
+    /** User-defined commands to execute in worktrees */
+    commands?: Record<string, string>;
 }
 
 /**

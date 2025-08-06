@@ -9,6 +9,7 @@ import {
     killTmuxSession,
     listTmuxSessions,
     sanitizeTmuxName,
+    sanitizeTmuxWindowName,
     switchToTmuxWindow,
     tmuxSessionExists} from "../../../src/platform/tmux";
 import {PlatformError} from "../../../src/utils/errors";
@@ -69,6 +70,29 @@ describe("Tmux Operations", () => {
 
         it("should handle multiple spaces", () => {
             expect(sanitizeTmuxName("my   feature   branch")).toBe("my-feature-branch");
+        });
+    });
+
+    describe("sanitizeTmuxWindowName", () => {
+        it("should preserve spaces", () => {
+            expect(sanitizeTmuxWindowName("my feature branch")).toBe("my feature branch");
+        });
+
+        it("should preserve colons", () => {
+            expect(sanitizeTmuxWindowName("feature::test")).toBe("feature::test");
+        });
+
+        it("should remove quotes", () => {
+            expect(sanitizeTmuxWindowName("my 'feature' branch")).toBe("my feature branch");
+            expect(sanitizeTmuxWindowName("my \"feature\" branch")).toBe("my feature branch");
+        });
+
+        it("should trim whitespace", () => {
+            expect(sanitizeTmuxWindowName("  feature  ")).toBe("feature");
+        });
+
+        it("should handle complex names", () => {
+            expect(sanitizeTmuxWindowName("worktree-name::command name")).toBe("worktree-name::command name");
         });
     });
 
@@ -259,7 +283,7 @@ describe("Tmux Operations", () => {
                 "-t",
                 "my-session",
                 "-n",
-                "my-window",
+                "My Window",
                 "-c",
                 "/test/dir",
             ], expect.any(Function));
@@ -291,7 +315,7 @@ describe("Tmux Operations", () => {
 
             await switchToTmuxWindow("My Session", "My Window");
 
-            expect(mockExecFile).toHaveBeenCalledWith("tmux", ["select-window", "-t", "my-session:my-window"], expect.any(Function));
+            expect(mockExecFile).toHaveBeenCalledWith("tmux", ["select-window", "-t", "my-session:My Window"], expect.any(Function));
         });
 
         it("should try to attach session if select-window fails", async() => {
@@ -317,7 +341,7 @@ describe("Tmux Operations", () => {
             await switchToTmuxWindow("My Session", "My Window");
 
             expect(mockExecFile).toHaveBeenCalledTimes(2);
-            expect(mockExecFile).toHaveBeenNthCalledWith(1, "tmux", ["select-window", "-t", "my-session:my-window"], expect.any(Function));
+            expect(mockExecFile).toHaveBeenNthCalledWith(1, "tmux", ["select-window", "-t", "my-session:My Window"], expect.any(Function));
             expect(mockExecFile).toHaveBeenNthCalledWith(2, "tmux", ["attach-session", "-t", "my-session"], expect.any(Function));
         });
 

@@ -9,6 +9,7 @@ import {CreateOptions} from "../core/types.js";
 import {detectPlatform} from "../platform/detector.js";
 import {spawnShell} from "../platform/shell.js";
 import {
+    attachToTmuxSession,
     canAttachToTmux,
     createTmuxSession,
     createTmuxWindow,
@@ -177,7 +178,7 @@ async function handleTmuxIntegration(
             } else if (canAttachToTmux()) {
                 // Only attach if we're in a proper terminal
                 logger.verbose("Attaching to tmux session...");
-                await execFileAsync("tmux", ["attach-session", "-t", sessionName]);
+                await attachToTmuxSession(sessionName, windowName);
             } else {
                 // Can't attach, just inform the user
                 logger.info(`Created tmux session '${sessionName}' with window '${windowName}'`);
@@ -195,7 +196,7 @@ async function handleTmuxIntegration(
             } else if (canAttachToTmux()) {
                 // Attach to session and switch to the new window
                 logger.verbose("Attaching to tmux session and switching to new window...");
-                await execFileAsync("tmux", ["attach-session", "-t", `${sessionName}:${windowName}`]);
+                await attachToTmuxSession(sessionName, windowName);
             } else {
                 // Can't attach, just inform the user
                 logger.info(`Created tmux window '${windowName}' in session '${sessionName}'`);

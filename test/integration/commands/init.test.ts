@@ -146,6 +146,7 @@ describe("Init Command Integration Tests", () => {
                 expect(config.baseDir).toBe(".worktrees");
                 expect(config.projectName).toBeTruthy();
                 expect(config.mainBranch).toBe("main"); // Sandbox defaults to main
+                expect(config.commands).toEqual({});
 
                 // Verify .gitignore
                 const gitignorePath = path.join(git.path, ".gitignore");

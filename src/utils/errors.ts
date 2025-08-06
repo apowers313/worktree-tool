@@ -100,3 +100,17 @@ export function formatErrorMessage(error: unknown): string {
 
     return String(error);
 }
+
+/**
+ * Error with optional hint for user
+ */
+export class WorktreeToolError extends Error {
+    constructor(
+        message: string,
+        public readonly hint?: string,
+    ) {
+        super(message);
+        this.name = "WorktreeToolError";
+        Error.captureStackTrace(this, WorktreeToolError);
+    }
+}

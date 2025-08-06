@@ -74,6 +74,7 @@ describe("Create Command", () => {
         vi.mocked(tmux.isTmuxAvailable).mockResolvedValue(false);
         vi.mocked(tmux.isInsideTmux).mockReturnValue(false);
         vi.mocked(tmux.canAttachToTmux).mockReturnValue(true);
+        vi.mocked(tmux.attachToTmuxSession).mockResolvedValue(undefined);
 
         // Mock shell
         vi.mocked(shell.spawnShell).mockResolvedValue(undefined);

@@ -13,7 +13,6 @@ A command-line tool for managing Git worktrees with integrated tmux/shell sessio
 - 📁 Organized worktree structure in `.worktrees/` directory
 - 🔧 Simple configuration management
 - 🌍 Cross-platform support (Linux, macOS, Windows)
-- 🤖 Self-hosting capable - use wtt to develop wtt
 
 ## Installation
 

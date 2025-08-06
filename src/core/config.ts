@@ -21,6 +21,15 @@ export async function loadConfig(): Promise<WorktreeConfig | null> {
             throw new ConfigError("Invalid configuration format");
         }
 
+        // Validate commands if present
+        if (data.commands) {
+            for (const [name, command] of Object.entries(data.commands)) {
+                if (typeof command !== "string" || command.trim() === "") {
+                    throw new ConfigError(`Invalid command "${name}": command must be a non-empty string`);
+                }
+            }
+        }
+
         return data;
     } catch(error) {
         if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") {
@@ -70,6 +79,7 @@ export function getDefaultConfig(projectName: string): WorktreeConfig {
         mainBranch: "main",
         baseDir: ".worktrees",
         tmux: true,
+        commands: {},
     };
 }
 
@@ -104,6 +114,20 @@ export function validateConfig(config: unknown): config is WorktreeConfig {
 
     if (typeof obj.tmux !== "boolean") {
         return false;
+    }
+
+    // Validate optional commands field
+    if (obj.commands !== undefined) {
+        if (typeof obj.commands !== "object" || obj.commands === null || Array.isArray(obj.commands)) {
+            return false;
+        }
+
+        // Check that all values are strings
+        for (const value of Object.values(obj.commands)) {
+            if (typeof value !== "string") {
+                return false;
+            }
+        }
     }
 
     return true;

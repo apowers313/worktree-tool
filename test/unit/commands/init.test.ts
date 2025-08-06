@@ -52,6 +52,7 @@ describe("Init Command", () => {
             mainBranch: "main",
             baseDir: ".worktrees",
             tmux: true,
+            commands: {},
         });
 
         // Mock project detection
@@ -175,13 +176,14 @@ describe("Init Command", () => {
             // Should detect platform for tmux
             expect(detector.detectPlatform).toHaveBeenCalled();
 
-            // Should save config
+            // Should save config with empty commands object
             expect(config.saveConfig).toHaveBeenCalledWith(
                 expect.objectContaining({
                     projectName: "detected-project",
                     mainBranch: "main",
                     baseDir: ".worktrees",
                     tmux: true,
+                    commands: {},
                 }),
             );
 
@@ -206,13 +208,14 @@ describe("Init Command", () => {
             // Should not detect main branch
             expect(mockGit.getMainBranch).not.toHaveBeenCalled();
 
-            // Should save config with provided values
+            // Should save config with provided values and empty commands
             expect(config.saveConfig).toHaveBeenCalledWith(
                 expect.objectContaining({
                     projectName: "custom-project",
                     mainBranch: "master",
                     baseDir: ".wt",
                     tmux: true,
+                    commands: {},
                 }),
             );
         });
@@ -223,6 +226,7 @@ describe("Init Command", () => {
             expect(config.saveConfig).toHaveBeenCalledWith(
                 expect.objectContaining({
                     tmux: false,
+                    commands: {},
                 }),
             );
         });
@@ -239,6 +243,7 @@ describe("Init Command", () => {
             expect(config.saveConfig).toHaveBeenCalledWith(
                 expect.objectContaining({
                     tmux: false,
+                    commands: {},
                 }),
             );
         });
@@ -308,6 +313,15 @@ describe("Init Command", () => {
 
             // Should still show concise message at the end
             expect(mockLogger.success).toHaveBeenCalledWith("Initialized worktree project. Config: .worktree-config.json");
+        });
+
+        it("should include empty commands object in saved config", async() => {
+            await executeInit({});
+
+            // Verify the saved config includes an empty commands object
+            const savedConfig = vi.mocked(config.saveConfig).mock.calls[0][0];
+            expect(savedConfig).toHaveProperty("commands");
+            expect(savedConfig.commands).toEqual({});
         });
     });
 

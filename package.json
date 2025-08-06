@@ -31,7 +31,8 @@
     "test:e2e": "vitest run -c vitest.config.e2e.ts",
     "test:all": "npm test && npm run test:integration && npm run test:e2e",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src test",
+    "lint": "eslint src test && tsc --noEmit",
+    "lint:fix": "eslint src test --fix && tsc --noEmit",
     "prepare": "husky",
     "prepublishOnly": "npm run build && npm test",
     "semantic-release": "semantic-release"
