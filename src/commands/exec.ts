@@ -2,6 +2,7 @@ import {Command} from "commander";
 import path from "path";
 
 import {loadConfig} from "../core/config.js";
+import {ENV_VARS} from "../core/constants.js";
 import {createGit} from "../core/git.js";
 import {Platform, WorktreeConfig, WorktreeInfo} from "../core/types.js";
 import {detectPlatform} from "../platform/detector.js";
@@ -17,6 +18,7 @@ import {
     switchToTmuxWindow,
     tmuxSessionExists,
 } from "../platform/tmux.js";
+import {getErrorMessage, handleCommandError} from "../utils/error-handler.js";
 import {WorktreeToolError} from "../utils/errors.js";
 import {getLogger, Logger} from "../utils/logger.js";
 
@@ -107,17 +109,7 @@ export const execCommand = new Command("exec")
             // Execute command
             await executeCommand(commandName, command, targetWorktrees, config, logger);
         } catch(error) {
-            if (error instanceof WorktreeToolError) {
-                const logger = getLogger(options);
-                logger.error(error.message);
-                if (error.hint) {
-                    logger.info(`Hint: ${error.hint}`);
-                }
-
-                process.exit(1);
-            }
-
-            throw error;
+            handleCommandError(error, getLogger(options));
         }
     });
 
@@ -164,7 +156,7 @@ async function executeCommand(
 
             logger.success(`Starting in ${worktreeName}: ${command}`);
         } catch(error) {
-            logger.error(`Failed to start in ${worktreeName}: ${error instanceof Error ? error.message : String(error)}`);
+            logger.error(`Failed to start in ${worktreeName}: ${getErrorMessage(error)}`);
             failureCount++;
         }
     }
@@ -180,7 +172,7 @@ async function executeCommand(
                     await switchToTmuxWindow(sessionName, firstWindowName);
                 } catch(error) {
                     // Don't fail the command if switching fails, just log it
-                    logger.verbose(`Could not switch to first window: ${error instanceof Error ? error.message : String(error)}`);
+                    logger.verbose(`Could not switch to first window: ${getErrorMessage(error)}`);
                 }
             } else if (canAttachToTmux()) {
                 // If not inside tmux but can attach, attach to the session
@@ -188,7 +180,7 @@ async function executeCommand(
                     await attachToTmuxSession(sessionName, firstWindowName);
                 } catch(error) {
                     // Don't fail the command if attachment fails, just log it
-                    logger.verbose(`Could not attach to tmux session: ${error instanceof Error ? error.message : String(error)}`);
+                    logger.verbose(`Could not attach to tmux session: ${getErrorMessage(error)}`);
                 }
             }
         }
@@ -212,9 +204,9 @@ async function executeTmux(
     // Create environment variables
     const worktreeName = path.basename(worktree.path);
     const envVars = {
-        WTT_WORKTREE_NAME: worktreeName,
-        WTT_WORKTREE_PATH: worktree.path,
-        WTT_IS_MAIN: "false", // Always false since we filter out main worktrees
+        [ENV_VARS.WORKTREE_NAME]: worktreeName,
+        [ENV_VARS.WORKTREE_PATH]: worktree.path,
+        [ENV_VARS.IS_MAIN]: "false", // Always false since we filter out main worktrees
     };
 
     // Build the command with environment variables
@@ -255,9 +247,9 @@ async function executeShell(
 
     // Set environment variables
     const worktreeName = path.basename(worktree.path);
-    process.env.WTT_WORKTREE_NAME = worktreeName;
-    process.env.WTT_WORKTREE_PATH = worktree.path;
-    process.env.WTT_IS_MAIN = "false"; // Always false since we filter out main worktrees
+    process.env[ENV_VARS.WORKTREE_NAME] = worktreeName;
+    process.env[ENV_VARS.WORKTREE_PATH] = worktree.path;
+    process.env[ENV_VARS.IS_MAIN] = "false"; // Always false since we filter out main worktrees
 
     // Execute in new shell
     await shell.executeInNewWindow(command, worktree.path, windowName);

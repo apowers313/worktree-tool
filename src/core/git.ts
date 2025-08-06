@@ -1,5 +1,6 @@
 import simpleGit, {SimpleGit} from "simple-git";
 
+import {getErrorMessage} from "../utils/error-handler.js";
 import {GitError} from "../utils/errors.js";
 import {WorktreeInfo} from "./types.js";
 
@@ -81,7 +82,7 @@ export class Git {
             // If still nothing, return 'main' as default
             return "main";
         } catch(error) {
-            throw new GitError(`Failed to detect main branch: ${error instanceof Error ? error.message : String(error)}`);
+            throw new GitError(`Failed to detect main branch: ${getErrorMessage(error)}`);
         }
     }
 
@@ -114,8 +115,7 @@ export class Git {
                 await this.git.raw(["worktree", "add", "-b", branch, path]);
             }
         } catch(error) {
-            const message = error instanceof Error ? error.message : String(error);
-            throw new GitError(`Failed to create worktree: ${message}`, {path, branch});
+            throw new GitError(`Failed to create worktree: ${getErrorMessage(error)}`, {path, branch});
         }
     }
 
@@ -182,8 +182,7 @@ export class Git {
 
             return worktrees;
         } catch(error) {
-            const message = error instanceof Error ? error.message : String(error);
-            throw new GitError(`Failed to list worktrees: ${message}`);
+            throw new GitError(`Failed to list worktrees: ${getErrorMessage(error)}`);
         }
     }
 
@@ -195,7 +194,7 @@ export class Git {
             const root = await this.git.revparse(["--show-toplevel"]);
             return root.trim();
         } catch(error) {
-            throw new GitError(`Failed to get repository root: ${error instanceof Error ? error.message : String(error)}`);
+            throw new GitError(`Failed to get repository root: ${getErrorMessage(error)}`);
         }
     }
 
@@ -207,7 +206,7 @@ export class Git {
             const branches = await this.git.branch();
             return branches.all.includes(branchName);
         } catch(error) {
-            throw new GitError(`Failed to check branch existence: ${error instanceof Error ? error.message : String(error)}`);
+            throw new GitError(`Failed to check branch existence: ${getErrorMessage(error)}`);
         }
     }
 }

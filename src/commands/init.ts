@@ -5,9 +5,11 @@ import {
     getDefaultConfig,
     saveConfig,
     updateGitignore} from "../core/config.js";
+import {CONFIG_DEFAULTS, GIT_ERRORS, VALIDATION} from "../core/constants.js";
 import {createGit} from "../core/git.js";
 import {InitOptions} from "../core/types.js";
 import {detectPlatform} from "../platform/detector.js";
+import {handleCommandError} from "../utils/error-handler.js";
 import {ConfigError, GitError, ValidationError} from "../utils/errors.js";
 import {getLogger} from "../utils/logger.js";
 import {detectProjectName} from "../utils/project.js";
@@ -23,17 +25,17 @@ export function validateInitOptions(options: InitOptions): void {
 
     // Validate baseDir if provided
     if (options.baseDir !== undefined && options.baseDir.trim() === "") {
-        throw new ValidationError("Base directory cannot be empty");
+        throw new ValidationError(`Base directory ${VALIDATION.EMPTY_STRING_ERROR}`);
     }
 
     // Validate projectName if provided
     if (options.projectName !== undefined && options.projectName.trim() === "") {
-        throw new ValidationError("Project name cannot be empty");
+        throw new ValidationError(`Project name ${VALIDATION.EMPTY_STRING_ERROR}`);
     }
 
     // Validate mainBranch if provided
     if (options.mainBranch !== undefined && options.mainBranch.trim() === "") {
-        throw new ValidationError("Main branch cannot be empty");
+        throw new ValidationError(`Main branch ${VALIDATION.EMPTY_STRING_ERROR}`);
     }
 }
 
@@ -61,7 +63,7 @@ export async function executeInit(options: InitOptions): Promise<void> {
         const isRepo = await git.isGitRepository();
 
         if (!isRepo) {
-            throw new GitError("Not in a git repository. Please run \"git init\" first");
+            throw new GitError(`${GIT_ERRORS.NOT_A_REPO}. Please run "git init" first`);
         }
 
         logger.verbose("Detecting project configuration...");
@@ -75,7 +77,7 @@ export async function executeInit(options: InitOptions): Promise<void> {
         logger.verbose(`Main branch: ${mainBranch}`);
 
         // Use default base directory if not provided
-        const baseDir = options.baseDir ?? ".worktrees";
+        const baseDir = options.baseDir ?? CONFIG_DEFAULTS.BASE_DIR;
         logger.verbose(`Base directory: ${baseDir}`);
 
         // Determine tmux setting
@@ -124,15 +126,7 @@ export async function executeInit(options: InitOptions): Promise<void> {
         // Always show concise success message
         logger.success("Initialized worktree project. Config: .worktree-config.json");
     } catch(error) {
-        if (error instanceof ValidationError ||
-        error instanceof GitError ||
-        error instanceof ConfigError) {
-            logger.error(error.message);
-        } else {
-            logger.error(`Initialization failed: ${error instanceof Error ? error.message : String(error)}`);
-        }
-
-        process.exit(1);
+        handleCommandError(error, logger);
     }
 }
 

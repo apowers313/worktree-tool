@@ -1,6 +1,7 @@
 import {promises as fs} from "fs";
 import * as path from "path";
 
+import {getErrorMessage} from "../utils/error-handler.js";
 import {ConfigError, FileSystemError} from "../utils/errors.js";
 import {WorktreeConfig} from "./types.js";
 
@@ -46,7 +47,7 @@ export async function loadConfig(): Promise<WorktreeConfig | null> {
         }
 
         throw new FileSystemError(
-            `Failed to read configuration: ${error instanceof Error ? error.message : String(error)}`,
+            `Failed to read configuration: ${getErrorMessage(error)}`,
         );
     }
 }
@@ -62,7 +63,7 @@ export async function saveConfig(config: WorktreeConfig): Promise<void> {
         await fs.writeFile(configPath, content, "utf-8");
     } catch(error) {
         throw new FileSystemError(
-            `Failed to save configuration: ${error instanceof Error ? error.message : String(error)}`,
+            `Failed to save configuration: ${getErrorMessage(error)}`,
         );
     }
 }
@@ -185,7 +186,7 @@ export async function updateGitignore(baseDir: string): Promise<void> {
         }
     } catch(error) {
         throw new FileSystemError(
-            `Failed to update .gitignore: ${error instanceof Error ? error.message : String(error)}`,
+            `Failed to update .gitignore: ${getErrorMessage(error)}`,
         );
     }
 }

@@ -58,7 +58,7 @@ describe("Create Command - No Commits", () => {
         await expect(executeCreate({name: "feature"})).rejects.toThrow("process.exit");
 
         expect(mockLogger.error).toHaveBeenCalledWith(
-            "Cannot create worktree: No commits found. Please make at least one commit before creating worktrees.",
+            "No commits found. Please make at least one commit before creating worktrees.",
         );
         expect(mockExit).toHaveBeenCalledWith(1);
     });
@@ -83,7 +83,7 @@ describe("Create Command - No Commits", () => {
         await expect(executeCreate({name: "feature"})).rejects.toThrow("process.exit");
 
         expect(mockLogger.error).toHaveBeenCalledWith(
-            "Cannot create worktree: No commits found. Please make at least one commit before creating worktrees.",
+            "No commits found. Please make at least one commit before creating worktrees.",
         );
     });
 });

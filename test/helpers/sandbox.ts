@@ -3,6 +3,8 @@ import * as os from "os";
 import * as path from "path";
 import {SimpleGit, simpleGit} from "simple-git";
 
+import {ENV_VARS} from "../../src/core/constants.js";
+
 export interface SandboxOptions {
     // Optional git config overrides
     gitConfig?: Record<string, string>;
@@ -137,8 +139,8 @@ export class TestSandbox {
         process.env.GIT_SSH_COMMAND = "ssh -o BatchMode=yes";
 
         // Disable tmux for tests unless explicitly testing tmux
-        if (!process.env.WTT_TEST_TMUX) {
-            process.env.WTT_DISABLE_TMUX = "true";
+        if (!process.env[ENV_VARS.TEST_TMUX]) {
+            process.env[ENV_VARS.DISABLE_TMUX] = "true";
         }
 
         // Additional isolation for commit signing

@@ -281,7 +281,7 @@ describe("Init Command", () => {
 
             await expect(executeInit({})).rejects.toThrow("process.exit");
 
-            expect(mockLogger.error).toHaveBeenCalledWith("Initialization failed: Disk full");
+            expect(mockLogger.error).toHaveBeenCalledWith("Disk full");
             expect(mockExit).toHaveBeenCalledWith(1);
         });
 

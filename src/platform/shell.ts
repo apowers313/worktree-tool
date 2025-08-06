@@ -5,6 +5,7 @@ import * as path from "path";
 import {promisify} from "util";
 
 import {ShellType} from "../core/types.js";
+import {getErrorMessage} from "../utils/error-handler.js";
 import {PlatformError} from "../utils/errors.js";
 
 const execAsync = promisify(exec);
@@ -142,7 +143,7 @@ export PS1="${promptPrefix}"
                     }
                 });
             } catch(error) {
-                reject(new PlatformError(`Failed to spawn shell: ${error instanceof Error ? error.message : String(error)}`));
+                reject(new PlatformError(`Failed to spawn shell: ${getErrorMessage(error)}`));
             }
         })();
     });

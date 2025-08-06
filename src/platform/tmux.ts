@@ -1,6 +1,8 @@
 import {execFile} from "child_process";
 import {promisify} from "util";
 
+import {ENV_VARS} from "../core/constants.js";
+import {getErrorMessage} from "../utils/error-handler.js";
 import {PlatformError} from "../utils/errors.js";
 
 const execFileAsync = promisify(execFile);
@@ -45,7 +47,7 @@ export function canAttachToTmux(): boolean {
  */
 export async function isTmuxAvailable(): Promise<boolean> {
     // Check for test environment variable to disable tmux
-    if (process.env.WTT_DISABLE_TMUX === "true") {
+    if (process.env[ENV_VARS.DISABLE_TMUX] === "true") {
         return false;
     }
 
@@ -84,7 +86,7 @@ export async function createTmuxSession(sessionName: string, startDirectory?: st
 
         await execFileAsync("tmux", args);
     } catch(error) {
-        throw new PlatformError(`Failed to create tmux session: ${error instanceof Error ? error.message : String(error)}`);
+        throw new PlatformError(`Failed to create tmux session: ${getErrorMessage(error)}`);
     }
 }
 
@@ -126,7 +128,7 @@ export async function renameTmuxWindow(
             sanitizedName,
         ]);
     } catch(error) {
-        throw new PlatformError(`Failed to rename tmux window: ${error instanceof Error ? error.message : String(error)}`);
+        throw new PlatformError(`Failed to rename tmux window: ${getErrorMessage(error)}`);
     }
 }
 
@@ -149,7 +151,7 @@ export async function tmuxSendKeys(
             "Enter",
         ]);
     } catch(error) {
-        throw new PlatformError(`Failed to send keys to tmux: ${error instanceof Error ? error.message : String(error)}`);
+        throw new PlatformError(`Failed to send keys to tmux: ${getErrorMessage(error)}`);
     }
 }
 
@@ -175,7 +177,7 @@ export async function createTmuxWindow(
             directory,
         ]);
     } catch(error) {
-        throw new PlatformError(`Failed to create tmux window: ${error instanceof Error ? error.message : String(error)}`);
+        throw new PlatformError(`Failed to create tmux window: ${getErrorMessage(error)}`);
     }
 }
 
@@ -204,7 +206,7 @@ export async function createTmuxWindowWithCommand(
             command,
         ]);
     } catch(error) {
-        throw new PlatformError(`Failed to create tmux window with command: ${error instanceof Error ? error.message : String(error)}`);
+        throw new PlatformError(`Failed to create tmux window with command: ${getErrorMessage(error)}`);
     }
 }
 
@@ -235,7 +237,7 @@ export async function createTmuxSessionWithWindow(
 
         await execFileAsync("tmux", args);
     } catch(error) {
-        throw new PlatformError(`Failed to create tmux session with window: ${error instanceof Error ? error.message : String(error)}`);
+        throw new PlatformError(`Failed to create tmux session with window: ${getErrorMessage(error)}`);
     }
 }
 
@@ -255,7 +257,7 @@ export async function switchToTmuxWindow(sessionName: string, windowName: string
             await execFileAsync("tmux", ["attach-session", "-t", sanitizedSession]);
         }
     } catch(error) {
-        throw new PlatformError(`Failed to switch to tmux window: ${error instanceof Error ? error.message : String(error)}`);
+        throw new PlatformError(`Failed to switch to tmux window: ${getErrorMessage(error)}`);
     }
 }
 
@@ -304,7 +306,7 @@ export async function attachToTmuxSession(sessionName: string, windowName?: stri
             throw error;
         }
 
-        throw new PlatformError(`Failed to attach to tmux session: ${error instanceof Error ? error.message : String(error)}`);
+        throw new PlatformError(`Failed to attach to tmux session: ${getErrorMessage(error)}`);
     }
 }
 
@@ -329,7 +331,7 @@ export async function killTmuxSession(sessionName: string): Promise<void> {
         const sanitizedName = sanitizeTmuxName(sessionName);
         await execFileAsync("tmux", ["kill-session", "-t", sanitizedName]);
     } catch(error) {
-        throw new PlatformError(`Failed to kill tmux session: ${error instanceof Error ? error.message : String(error)}`);
+        throw new PlatformError(`Failed to kill tmux session: ${getErrorMessage(error)}`);
     }
 }
 
@@ -352,7 +354,7 @@ export class TmuxManager {
                 directory,
             ]);
         } catch(error) {
-            throw new PlatformError(`Failed to create tmux window: ${error instanceof Error ? error.message : String(error)}`);
+            throw new PlatformError(`Failed to create tmux window: ${getErrorMessage(error)}`);
         }
     }
 
@@ -368,7 +370,7 @@ export class TmuxManager {
 
             await execFileAsync("tmux", args);
         } catch(error) {
-            throw new PlatformError(`Failed to send keys to tmux: ${error instanceof Error ? error.message : String(error)}`);
+            throw new PlatformError(`Failed to send keys to tmux: ${getErrorMessage(error)}`);
         }
     }
 
@@ -379,7 +381,7 @@ export class TmuxManager {
         try {
             await execFileAsync("tmux", args);
         } catch(error) {
-            throw new PlatformError(`Failed to execute tmux command: ${error instanceof Error ? error.message : String(error)}`);
+            throw new PlatformError(`Failed to execute tmux command: ${getErrorMessage(error)}`);
         }
     }
 }

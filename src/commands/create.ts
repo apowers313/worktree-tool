@@ -22,6 +22,8 @@ import {
 import {getLogger} from "../utils/logger.js";
 
 const execFileAsync = promisify(execFile);
+import {GIT_ERRORS, VALIDATION} from "../core/constants.js";
+import {getErrorMessage, handleCommandError} from "../utils/error-handler.js";
 import {ConfigError, GitError, ValidationError} from "../utils/errors.js";
 
 /**
@@ -56,8 +58,8 @@ export function validateCreateOptions(options: CreateOptions): void {
         throw new ValidationError("Worktree name contains only invalid characters");
     }
 
-    if (sanitized.length > 100) {
-        throw new ValidationError("Worktree name is too long (max 100 characters)");
+    if (sanitized.length > VALIDATION.MAX_WORKTREE_NAME_LENGTH) {
+        throw new ValidationError(`Worktree name is too long (max ${String(VALIDATION.MAX_WORKTREE_NAME_LENGTH)} characters)`);
     }
 }
 
@@ -92,7 +94,7 @@ export async function executeCreate(options: CreateOptions): Promise<void> {
         // Check if the repository has any commits
         const hasCommits = await git.hasCommits();
         if (!hasCommits) {
-            throw new GitError("Cannot create worktree: No commits found. Please make at least one commit before creating worktrees.");
+            throw new GitError(GIT_ERRORS.NO_COMMITS);
         }
 
         // Sanitize the worktree name
@@ -110,9 +112,9 @@ export async function executeCreate(options: CreateOptions): Promise<void> {
             await git.createWorktree(worktreePath, sanitizedName);
         } catch(error) {
             // Check if the error is about HEAD not being valid (in case our check missed it)
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            if (errorMessage.includes("Not a valid object name") && errorMessage.includes("HEAD")) {
-                throw new GitError("Cannot create worktree: No commits found. Please make at least one commit before creating worktrees.");
+            const errorMessage = getErrorMessage(error);
+            if (errorMessage.includes(GIT_ERRORS.INVALID_HEAD) && errorMessage.includes("HEAD")) {
+                throw new GitError(GIT_ERRORS.NO_COMMITS);
             }
 
             throw new GitError(`Failed to create worktree: ${errorMessage}`);
@@ -131,15 +133,7 @@ export async function executeCreate(options: CreateOptions): Promise<void> {
             await handleShellSpawning(sanitizedName, absoluteWorktreePath, logger);
         }
     } catch(error) {
-        if (error instanceof ValidationError ||
-        error instanceof GitError ||
-        error instanceof ConfigError) {
-            logger.error(error.message);
-        } else {
-            logger.error(`Failed to create worktree: ${error instanceof Error ? error.message : String(error)}`);
-        }
-
-        process.exit(1);
+        handleCommandError(error, logger);
     }
 }
 
@@ -204,7 +198,7 @@ async function handleTmuxIntegration(
             }
         }
     } catch(error) {
-        logger.warn(`Tmux integration failed: ${error instanceof Error ? error.message : String(error)}`);
+        logger.warn(`Tmux integration failed: ${getErrorMessage(error)}`);
         logger.verbose("Falling back to shell spawning...");
         await handleShellSpawning(worktreeName, worktreePath, logger);
     }
@@ -226,7 +220,7 @@ async function handleShellSpawning(
         // Spawn shell with custom prompt
         await spawnShell(worktreePath, platform.shellType, worktreeName);
     } catch(error) {
-        logger.warn(`Failed to spawn shell: ${error instanceof Error ? error.message : String(error)}`);
+        logger.warn(`Failed to spawn shell: ${getErrorMessage(error)}`);
         logger.info(`Worktree created at: ${worktreePath}`);
         logger.info(`You can manually navigate there with: cd ${worktreePath}`);
     }
