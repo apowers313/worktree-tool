@@ -5,6 +5,12 @@ import {ENV_VARS} from "../core/constants.js";
 import {getErrorMessage} from "../utils/error-handler.js";
 import {PlatformError} from "../utils/errors.js";
 import {sanitizeTmuxSession, sanitizeTmuxWindow} from "../utils/sanitize.js";
+import {
+    executeTmuxCommand,
+    executeTmuxCommandSilent,
+    executeTmuxCommandVoid,
+    tmuxObjectExists,
+} from "./tmux-wrapper.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -43,43 +49,29 @@ export async function isTmuxAvailable(): Promise<boolean> {
         return false;
     }
 
-    try {
-        await execFileAsync("tmux", ["-V"]);
-        return true;
-    } catch {
-        return false;
-    }
+    return executeTmuxCommandSilent(["-V"]);
 }
 
 /**
  * Check if a tmux session exists
  */
 export async function tmuxSessionExists(sessionName: string): Promise<boolean> {
-    try {
-        await execFileAsync("tmux", ["has-session", "-t", sessionName]);
-        return true;
-    } catch {
-        return false;
-    }
+    return tmuxObjectExists(["has-session", "-t", sessionName]);
 }
 
 /**
  * Create a tmux session
  */
 export async function createTmuxSession(sessionName: string, startDirectory?: string): Promise<void> {
-    try {
-        const sanitizedName = sanitizeTmuxName(sessionName);
-        const args = ["new-session", "-d", "-s", sanitizedName];
+    const sanitizedName = sanitizeTmuxName(sessionName);
+    const args = ["new-session", "-d", "-s", sanitizedName];
 
-        // If a start directory is provided, use it
-        if (startDirectory) {
-            args.push("-c", startDirectory);
-        }
-
-        await execFileAsync("tmux", args);
-    } catch(error) {
-        throw new PlatformError(`Failed to create tmux session: ${getErrorMessage(error)}`);
+    // If a start directory is provided, use it
+    if (startDirectory) {
+        args.push("-c", startDirectory);
     }
+
+    await executeTmuxCommandVoid(args, "Failed to create tmux session");
 }
 
 /**
@@ -88,14 +80,17 @@ export async function createTmuxSession(sessionName: string, startDirectory?: st
 export async function getTmuxWindowCount(sessionName: string): Promise<number> {
     try {
         const sanitizedSession = sanitizeTmuxName(sessionName);
-        const result = await execFileAsync("tmux", [
-            "list-windows",
-            "-t",
-            sanitizedSession,
-            "-F",
-            "#{window_id}",
-        ]);
-        return result.stdout.trim().split("\n").filter((line) => line).length;
+        const result = await executeTmuxCommand(
+            [
+                "list-windows",
+                "-t",
+                sanitizedSession,
+                "-F",
+                "#{window_id}",
+            ],
+            "Failed to list tmux windows",
+        );
+        return result.trim().split("\n").filter((line) => line).length;
     } catch {
         return 0;
     }
@@ -109,19 +104,18 @@ export async function renameTmuxWindow(
     windowIndex: number,
     newName: string,
 ): Promise<void> {
-    try {
-        const sanitizedSession = sanitizeTmuxName(sessionName);
-        const sanitizedName = sanitizeTmuxName(newName);
+    const sanitizedSession = sanitizeTmuxName(sessionName);
+    const sanitizedName = sanitizeTmuxName(newName);
 
-        await execFileAsync("tmux", [
+    await executeTmuxCommandVoid(
+        [
             "rename-window",
             "-t",
             `${sanitizedSession}:${String(windowIndex)}`,
             sanitizedName,
-        ]);
-    } catch(error) {
-        throw new PlatformError(`Failed to rename tmux window: ${getErrorMessage(error)}`);
-    }
+        ],
+        "Failed to rename tmux window",
+    );
 }
 
 /**
@@ -132,19 +126,18 @@ export async function tmuxSendKeys(
     windowIndex: number,
     command: string,
 ): Promise<void> {
-    try {
-        const sanitizedSession = sanitizeTmuxName(sessionName);
+    const sanitizedSession = sanitizeTmuxName(sessionName);
 
-        await execFileAsync("tmux", [
+    await executeTmuxCommandVoid(
+        [
             "send-keys",
             "-t",
             `${sanitizedSession}:${String(windowIndex)}`,
             command,
             "Enter",
-        ]);
-    } catch(error) {
-        throw new PlatformError(`Failed to send keys to tmux: ${getErrorMessage(error)}`);
-    }
+        ],
+        "Failed to send keys to tmux",
+    );
 }
 
 /**
@@ -307,8 +300,8 @@ export async function attachToTmuxSession(sessionName: string, windowName?: stri
  */
 export async function listTmuxSessions(): Promise<string[]> {
     try {
-        const result = await execFileAsync("tmux", ["list-sessions", "-F", "#{session_name}"]);
-        return result.stdout.trim().split("\n").filter((name) => name.length > 0);
+        const result = await executeTmuxCommand(["list-sessions", "-F", "#{session_name}"], "Failed to list tmux sessions");
+        return result.trim().split("\n").filter((name) => name.length > 0);
     } catch {
     // No sessions exist or tmux not available
         return [];
@@ -319,12 +312,8 @@ export async function listTmuxSessions(): Promise<string[]> {
  * Kill a tmux session
  */
 export async function killTmuxSession(sessionName: string): Promise<void> {
-    try {
-        const sanitizedName = sanitizeTmuxName(sessionName);
-        await execFileAsync("tmux", ["kill-session", "-t", sanitizedName]);
-    } catch(error) {
-        throw new PlatformError(`Failed to kill tmux session: ${getErrorMessage(error)}`);
-    }
+    const sanitizedName = sanitizeTmuxName(sessionName);
+    await executeTmuxCommandVoid(["kill-session", "-t", sanitizedName], "Failed to kill tmux session");
 }
 
 /**

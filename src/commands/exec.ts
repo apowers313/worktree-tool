@@ -4,8 +4,7 @@ import path from "path";
 import {loadConfig} from "../core/config.js";
 import {ENV_VARS} from "../core/constants.js";
 import {createGit} from "../core/git.js";
-import {Platform, WorktreeConfig, WorktreeInfo} from "../core/types.js";
-import {detectPlatform} from "../platform/detector.js";
+import {WorktreeConfig, WorktreeInfo} from "../core/types.js";
 import {ShellManager} from "../platform/shell.js";
 import {
     attachToTmuxSession,
@@ -13,6 +12,7 @@ import {
     createTmuxSessionWithWindow,
     createTmuxWindowWithCommand,
     isInsideTmux,
+    isTmuxAvailable,
     sanitizeTmuxName,
     sanitizeTmuxWindowName,
     switchToTmuxWindow,
@@ -120,16 +120,15 @@ async function executeCommand(
     config: WorktreeConfig,
     logger: Logger,
 ): Promise<void> {
-    const platform = detectPlatform();
-
     logger.info(`Executing '${commandName}' in ${String(worktrees.length)} worktree${worktrees.length > 1 ? "s" : ""}...`);
 
     let failureCount = 0;
     let firstWindowName: string | undefined;
 
-    // Check if tmux session exists for first window handling
+    // Check if tmux is available and session exists
+    const hasTmux = await isTmuxAvailable();
     const sessionName = sanitizeTmuxName(config.projectName);
-    const sessionExists = config.tmux && platform.hasTmux ? await tmuxSessionExists(sessionName) : false;
+    const sessionExists = config.tmux && hasTmux ? await tmuxSessionExists(sessionName) : false;
 
     // Execute in each worktree
     for (let i = 0; i < worktrees.length; i++) {
@@ -143,7 +142,7 @@ async function executeCommand(
         const windowName = `${worktreeName}::${commandName}`;
 
         try {
-            if (config.tmux && platform.hasTmux) {
+            if (config.tmux && hasTmux) {
                 await executeTmux(worktree, command, windowName, config, i === 0 && !sessionExists);
 
                 // Remember the first window name for switching
@@ -151,7 +150,7 @@ async function executeCommand(
                     firstWindowName = windowName;
                 }
             } else {
-                await executeShell(worktree, command, windowName, platform);
+                await executeShell(worktree, command, windowName);
             }
 
             logger.success(`Starting in ${worktreeName}: ${command}`);
@@ -165,7 +164,7 @@ async function executeCommand(
         logger.info("All commands started. Check individual windows for output.");
 
         // Handle tmux window switching/attachment
-        if (config.tmux && platform.hasTmux && firstWindowName) {
+        if (config.tmux && hasTmux && firstWindowName) {
             if (isInsideTmux()) {
                 // If inside tmux, switch to the first window
                 try {
@@ -241,9 +240,8 @@ async function executeShell(
     worktree: WorktreeInfo,
     command: string,
     windowName: string,
-    platform: Platform,
 ): Promise<void> {
-    const shell = new ShellManager(platform.shellType);
+    const shell = new ShellManager();
 
     // Set environment variables
     const worktreeName = path.basename(worktree.path);

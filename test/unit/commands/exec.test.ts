@@ -3,7 +3,6 @@ import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import * as config from "../../../src/core/config";
 import * as git from "../../../src/core/git";
 import {WorktreeConfig, WorktreeInfo} from "../../../src/core/types";
-import * as detector from "../../../src/platform/detector";
 import {ShellManager} from "../../../src/platform/shell";
 import * as tmux from "../../../src/platform/tmux";
 import * as logger from "../../../src/utils/logger";
@@ -12,7 +11,6 @@ vi.mock("../../../src/core/config");
 vi.mock("../../../src/core/git");
 vi.mock("../../../src/platform/tmux");
 vi.mock("../../../src/platform/shell");
-vi.mock("../../../src/platform/detector");
 vi.mock("../../../src/utils/logger");
 
 // Global mocks
@@ -45,6 +43,7 @@ describe("exec command", () => {
         vi.mocked(git.createGit).mockReturnValue(mockGit);
 
         // Mock tmux functions
+        vi.mocked(tmux.isTmuxAvailable).mockResolvedValue(true);
         vi.mocked(tmux.tmuxSessionExists).mockResolvedValue(true);
         vi.mocked(tmux.createTmuxSessionWithWindow).mockResolvedValue();
         vi.mocked(tmux.createTmuxWindowWithCommand).mockResolvedValue();
@@ -60,13 +59,6 @@ describe("exec command", () => {
             executeInNewWindow: vi.fn(),
         };
         vi.mocked(ShellManager).mockImplementation(() => mockShellManager);
-
-        // Mock detectPlatform
-        vi.mocked(detector.detectPlatform).mockReturnValue({
-            os: "linux",
-            hasTmux: true,
-            shellType: "bash",
-        });
     });
 
     afterEach(() => {
