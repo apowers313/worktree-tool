@@ -1,3 +1,15 @@
+# [1.1.0](https://github.com/apowers313/worktree-tool/compare/v1.0.0...v1.1.0) (2025-08-06)
+
+
+### Bug Fixes
+
+* tmux window management ([73ba5d6](https://github.com/apowers313/worktree-tool/commit/73ba5d62354e86bef37d9f4c46b7652840a9388d))
+
+
+### Features
+
+* add exec command ([fa0ea5f](https://github.com/apowers313/worktree-tool/commit/fa0ea5f6304295a169f4e6a558021a4a75ef6c11))
+
 # 1.0.0 (2025-08-04)
 
 

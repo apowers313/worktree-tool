@@ -1,6 +1,6 @@
 {
   "name": "worktree-tool",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A command-line tool for managing Git worktrees with integrated tmux/shell session management",
   "type": "module",
   "main": "./dist/index.js",
