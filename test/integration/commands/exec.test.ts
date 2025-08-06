@@ -73,9 +73,10 @@ describe("exec command integration", () => {
             // without a display it will fail. We're testing that the command parsing works.
             const result = runWtt(["exec", "complex"]);
 
-            // Will fail due to no terminal, but should parse the command correctly
+            // On some CI systems (like Windows), terminal may be available and command succeeds
             const output = result.stdout + result.stderr;
-            expect(output).toContain("Failed to start in test");
+            // Either it fails (no terminal) or succeeds (terminal available)
+            expect(output).toMatch(/Failed to start in test|Starting in test/);
         });
     });
 
@@ -104,9 +105,10 @@ describe("exec command integration", () => {
 
             const result = runWtt(["exec", "echo", "feature"]);
 
-            // Will fail due to no terminal, but should try to execute in the right worktree
+            // On some CI systems (like Windows), terminal may be available and command succeeds
             const output = result.stdout + result.stderr;
-            expect(output).toContain("Failed to start in feature");
+            // Either it fails (no terminal) or succeeds (terminal available)
+            expect(output).toMatch(/Failed to start in feature|Starting in feature/);
         });
     });
 

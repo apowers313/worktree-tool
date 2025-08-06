@@ -42,11 +42,11 @@ describe("Tmux Window Switching Integration", () => {
         }
     });
 
-    it("should switch to tmux window when creating second worktree", function() {
-        // Skip if not in CI or tmux not available
-        if (!process.env.CI && !process.env.TMUX) {
-            console.log("Skipping tmux window switching test - not in tmux");
-            this.skip();
+    it("should switch to tmux window when creating second worktree", function(context) {
+        // Skip if not in CI or tmux not available, or if tmux is disabled
+        if ((!process.env.CI && !process.env.TMUX) || process.env.DISABLE_TMUX === "true") {
+            console.log("Skipping tmux window switching test - tmux not available or disabled");
+            context.skip();
             return;
         }
 
@@ -56,10 +56,14 @@ describe("Tmux Window Switching Integration", () => {
 
             // Ensure git config is set (needed for commits)
             try {
-                execSync("git config user.email || git config user.email 'test@example.com'", {stdio: "ignore"});
-                execSync("git config user.name || git config user.name 'Test User'", {stdio: "ignore"});
+                execSync("git config user.email 'test@example.com'", {stdio: "ignore"});
             } catch {
-                // Ignore errors if config already set
+                // Ignore if already set
+            }
+            try {
+                execSync("git config user.name 'Test User'", {stdio: "ignore"});
+            } catch {
+                // Ignore if already set
             }
 
             // Make initial commit
@@ -99,10 +103,13 @@ describe("Tmux Window Switching Integration", () => {
             // Note: We can't easily test the actual window switching behavior in automated tests
             // as it requires being attached to the tmux session, but the manual test confirms it works
         } catch(error: any) {
-            // Skip test if tmux is not available
-            if (error.message?.includes("tmux") || error.message?.includes("command not found")) {
-                console.log("Skipping test - tmux not available");
-                this.skip();
+            // Skip test if tmux is not available or in CI without tmux
+            if (error.message?.includes("tmux") ||
+                error.message?.includes("command not found") ||
+                error.message?.includes("no server running") ||
+                (process.env.CI && process.env.DISABLE_TMUX === "true")) {
+                console.log("Skipping test - tmux not available or disabled in CI");
+                context.skip();
                 return;
             }
 
