@@ -3,6 +3,7 @@ import * as path from "path";
 
 import {getErrorMessage} from "../utils/error-handler.js";
 import {ConfigError, FileSystemError} from "../utils/errors.js";
+import {findProjectRoot} from "../utils/find-root.js";
 import {validateCommand} from "../utils/validation.js";
 import {WorktreeConfig} from "./types.js";
 
@@ -15,7 +16,12 @@ const CONFIG_VERSION = "1.0.0";
  */
 export async function loadConfig(): Promise<WorktreeConfig | null> {
     try {
-        const configPath = path.join(process.cwd(), CONFIG_FILENAME);
+        const projectRoot = await findProjectRoot();
+        if (!projectRoot) {
+            return null;
+        }
+
+        const configPath = path.join(projectRoot, CONFIG_FILENAME);
         const content = await fs.readFile(configPath, "utf-8");
         const data: unknown = JSON.parse(content);
 
@@ -61,10 +67,19 @@ export async function loadConfig(): Promise<WorktreeConfig | null> {
  */
 export async function saveConfig(config: WorktreeConfig): Promise<void> {
     try {
-        const configPath = path.join(process.cwd(), CONFIG_FILENAME);
+        const projectRoot = await findProjectRoot();
+        if (!projectRoot) {
+            throw new ConfigError("Not in a worktree project");
+        }
+
+        const configPath = path.join(projectRoot, CONFIG_FILENAME);
         const content = JSON.stringify(config, null, 2);
         await fs.writeFile(configPath, content, "utf-8");
     } catch(error) {
+        if (error instanceof ConfigError) {
+            throw error;
+        }
+
         throw new FileSystemError(
             `Failed to save configuration: ${getErrorMessage(error)}`,
         );
@@ -142,7 +157,12 @@ export function validateConfig(config: unknown): config is WorktreeConfig {
  */
 export async function configExists(): Promise<boolean> {
     try {
-        const configPath = path.join(process.cwd(), CONFIG_FILENAME);
+        const projectRoot = await findProjectRoot();
+        if (!projectRoot) {
+            return false;
+        }
+
+        const configPath = path.join(projectRoot, CONFIG_FILENAME);
         await fs.access(configPath);
         return true;
     } catch {
@@ -156,7 +176,9 @@ export async function configExists(): Promise<boolean> {
  */
 export async function updateGitignore(baseDir: string): Promise<void> {
     try {
-        const gitignorePath = path.join(process.cwd(), ".gitignore");
+        const projectRoot = await findProjectRoot() ?? process.cwd();
+
+        const gitignorePath = path.join(projectRoot, ".gitignore");
         let content = "";
 
         try {

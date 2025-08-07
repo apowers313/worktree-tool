@@ -398,7 +398,7 @@ describe("Create Command", () => {
             expect(mockLogger.verbose).toHaveBeenCalledWith("Loading configuration...");
             expect(mockLogger.verbose).toHaveBeenCalledWith("Checking git repository...");
             expect(mockLogger.verbose).toHaveBeenCalledWith("Creating worktree: my-feature");
-            expect(mockLogger.verbose).toHaveBeenCalledWith(expect.stringMatching(/Worktree path: \.worktrees[\\/]my-feature/));
+            expect(mockLogger.verbose).toHaveBeenCalledWith(expect.stringMatching(/Worktree path: .*[\\/]\.worktrees[\\/]my-feature/));
             expect(mockLogger.verbose).toHaveBeenCalledWith("Worktree created successfully");
         });
     });

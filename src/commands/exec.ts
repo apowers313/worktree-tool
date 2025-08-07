@@ -20,6 +20,7 @@ import {
 } from "../platform/tmux.js";
 import {getErrorMessage, handleCommandError} from "../utils/error-handler.js";
 import {WorktreeToolError} from "../utils/errors.js";
+import {getProjectRoot} from "../utils/find-root.js";
 import {getLogger, Logger} from "../utils/logger.js";
 
 interface ExecOptions {
@@ -65,8 +66,9 @@ export const execCommand = new Command("exec")
                 );
             }
 
-            // Get worktrees
-            const git = createGit();
+            // Get project root and worktrees
+            const projectRoot = await getProjectRoot();
+            const git = createGit(projectRoot);
             const allWorktrees = await git.listWorktrees();
 
             // Filter out the main worktree - we only want to run commands in child worktrees

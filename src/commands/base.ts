@@ -4,6 +4,7 @@ import {createGit, Git} from "../core/git.js";
 import {WorktreeConfig} from "../core/types.js";
 import {handleCommandError} from "../utils/error-handler.js";
 import {ConfigError, GitError} from "../utils/errors.js";
+import {findProjectRoot} from "../utils/find-root.js";
 import {getLogger, Logger} from "../utils/logger.js";
 
 export interface CommandContext {
@@ -40,10 +41,16 @@ export abstract class BaseCommand<TOptions extends CommandOptions = CommandOptio
             logger.verbose("Validating options...");
             this.validateOptions(options);
 
+            // Find project root if we need config or git
+            let projectRoot: string | null = null;
+            if (this.requiresConfig() || this.requiresGitRepo()) {
+                projectRoot = await findProjectRoot();
+            }
+
             const context: CommandContext = {
                 logger,
                 config: null,
-                git: createGit(),
+                git: createGit(projectRoot ?? undefined),
             };
 
             // Load config if required
