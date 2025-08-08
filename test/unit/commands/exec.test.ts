@@ -22,6 +22,7 @@ let processExitMock: any;
 describe("exec command", () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        vi.resetModules();
 
         // Mock process.exit
         processExitMock = vi.spyOn(process, "exit").mockImplementation((code?: any): never => {
@@ -122,7 +123,7 @@ describe("exec command", () => {
             const result = await runCommand(["nonexistent"]);
 
             expect(result.code).toBe(1);
-            expect(mockLogger.error).toHaveBeenCalledWith("Command \"nonexistent\" not found");
+            expect(mockLogger.error).toHaveBeenCalledWith("Command \"nonexistent\" not found in config");
             expect(mockLogger.info).toHaveBeenCalledWith("Hint: Available commands: test, build");
         });
 
@@ -143,7 +144,7 @@ describe("exec command", () => {
                 {path: "/project/.worktrees/feature", branch: "feature", commit: "def", isMain: false, isLocked: false},
             ] as WorktreeInfo[]);
 
-            const result = await runCommand(["test", "nonexistent"]);
+            const result = await runCommand(["test", "-w", "nonexistent"]);
 
             expect(result.code).toBe(1);
             expect(mockLogger.error).toHaveBeenCalledWith("Worktree(s) not found: nonexistent");
@@ -168,7 +169,7 @@ describe("exec command", () => {
                 {path: "/project/.worktrees/feature-b", branch: "feature-b", commit: "ghi", isMain: false, isLocked: false},
             ] as WorktreeInfo[]);
 
-            const result = await runCommand(["test", "feature-a", "nonexistent", "feature-x"]);
+            const result = await runCommand(["test", "-w", "feature-a,nonexistent,feature-x"]);
 
             expect(result.code).toBe(1);
             expect(mockLogger.error).toHaveBeenCalledWith("Worktree(s) not found: nonexistent, feature-x");
@@ -200,9 +201,9 @@ describe("exec command", () => {
             expect(tmux.createTmuxWindowWithCommand).toHaveBeenCalledTimes(1);
             expect(tmux.createTmuxWindowWithCommand).toHaveBeenCalledWith(
                 "test",
-                "feature::test",
+                "feature::exec",
                 "/project/.worktrees/feature",
-                expect.stringContaining("npm test"),
+                expect.stringMatching(/npm test/),
             );
         });
 
@@ -223,15 +224,15 @@ describe("exec command", () => {
                 {path: "/project/.worktrees/feature", branch: "feature", commit: "def", isMain: false, isLocked: false},
             ] as WorktreeInfo[]);
 
-            const result = await runCommand(["build", "feature"]);
+            const result = await runCommand(["build", "-w", "feature"]);
 
             expect(result.code).toBe(0);
             expect(tmux.createTmuxWindowWithCommand).toHaveBeenCalledTimes(1);
             expect(tmux.createTmuxWindowWithCommand).toHaveBeenCalledWith(
                 "test",
-                "feature::build",
+                "feature::exec",
                 "/project/.worktrees/feature",
-                expect.stringContaining("npm run build"),
+                expect.stringMatching(/npm run build/),
             );
         });
 
@@ -252,15 +253,15 @@ describe("exec command", () => {
                 {path: "/project/.worktrees/my-feature", branch: "feature/test", commit: "def", isMain: false, isLocked: false},
             ] as WorktreeInfo[]);
 
-            const result = await runCommand(["lint", "feature/test"]);
+            const result = await runCommand(["lint", "-w", "feature/test"]);
 
             expect(result.code).toBe(0);
             expect(tmux.createTmuxWindowWithCommand).toHaveBeenCalledTimes(1);
             expect(tmux.createTmuxWindowWithCommand).toHaveBeenCalledWith(
                 "test",
-                "my-feature::lint",
+                "my-feature::exec",
                 "/project/.worktrees/my-feature",
-                expect.stringContaining("npm run lint"),
+                expect.stringMatching(/npm run lint/),
             );
         });
 
@@ -283,7 +284,7 @@ describe("exec command", () => {
                 {path: "/project/.worktrees/feature-c", branch: "feature-c", commit: "jkl", isMain: false, isLocked: false},
             ] as WorktreeInfo[]);
 
-            const result = await runCommand(["test", "feature-a", "feature-c"]);
+            const result = await runCommand(["test", "-w", "feature-a,feature-c"]);
 
             expect(result.code).toBe(0);
             expect(tmux.createTmuxWindowWithCommand).toHaveBeenCalledTimes(2);
@@ -291,17 +292,17 @@ describe("exec command", () => {
             // Should execute in feature-a
             expect(tmux.createTmuxWindowWithCommand).toHaveBeenCalledWith(
                 "test",
-                "feature-a::test",
+                "feature-a::exec",
                 "/project/.worktrees/feature-a",
-                expect.stringContaining("npm test"),
+                expect.stringMatching(/npm test/),
             );
 
             // Should execute in feature-c
             expect(tmux.createTmuxWindowWithCommand).toHaveBeenCalledWith(
                 "test",
-                "feature-c::test",
+                "feature-c::exec",
                 "/project/.worktrees/feature-c",
-                expect.stringContaining("npm test"),
+                expect.stringMatching(/npm test/),
             );
 
             // Should NOT execute in feature-b
@@ -334,7 +335,7 @@ describe("exec command", () => {
 
             expect(result.code).toBe(0);
             expect(mockShellManager.executeInNewWindow).toHaveBeenCalledTimes(1);
-            expect(mockShellManager.executeInNewWindow).toHaveBeenCalledWith("npm run dev", "/project/.worktrees/dev", "dev::dev");
+            expect(mockShellManager.executeInNewWindow).toHaveBeenCalledWith("npm run dev", "/project/.worktrees/dev", "dev::exec");
 
             // Check environment variables were set
             expect(process.env.WTT_WORKTREE_NAME).toBe("dev");
@@ -366,7 +367,7 @@ describe("exec command", () => {
             const result = await runCommand(["test"]);
 
             expect(result.code).toBe(1);
-            expect(mockLogger.error).toHaveBeenCalledWith("1 command(s) failed to start.");
+            expect(mockLogger.error).toHaveBeenCalledWith("1 command(s) failed to start");
         });
 
         it("should show message when no child worktrees exist", async() => {
@@ -420,9 +421,9 @@ describe("exec command", () => {
             // Should create session with first window
             expect(tmux.createTmuxSessionWithWindow).toHaveBeenCalledWith(
                 "test",
-                "feature::test",
+                "feature::exec",
                 "/project/.worktrees/feature",
-                expect.stringContaining("npm test"),
+                expect.stringMatching(/npm test/),
             );
             // Should not call createTmuxWindowWithCommand since first window is created with session
             expect(tmux.createTmuxWindowWithCommand).not.toHaveBeenCalled();
@@ -457,7 +458,7 @@ describe("exec command", () => {
             expect(tmux.createTmuxWindowWithCommand).toHaveBeenCalledTimes(2);
 
             // Should switch to the first window
-            expect(tmux.switchToTmuxWindow).toHaveBeenCalledWith("test", "feature-a::build");
+            expect(tmux.switchToTmuxWindow).toHaveBeenCalledWith("test", "feature-a::exec");
         });
 
         it("should not switch windows when not inside tmux", async() => {
@@ -516,7 +517,7 @@ describe("exec command", () => {
             expect(result.code).toBe(0);
 
             // Should attach to the session with the first window
-            expect(tmux.attachToTmuxSession).toHaveBeenCalledWith("test", "feature-a::test");
+            expect(tmux.attachToTmuxSession).toHaveBeenCalledWith("test", "feature-a::exec");
         });
 
         it("should not attach when cannot attach to tmux", async() => {
@@ -568,7 +569,7 @@ describe("exec command", () => {
 
             await runCommand(["test", "--verbose"]);
 
-            expect(vi.mocked(logger.getLogger)).toHaveBeenCalledWith({verbose: true});
+            expect(vi.mocked(logger.getLogger)).toHaveBeenCalledWith(expect.objectContaining({verbose: true}));
         });
 
         it("should respect quiet flag", async() => {
