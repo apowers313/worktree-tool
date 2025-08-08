@@ -401,6 +401,18 @@ describe("Create Command", () => {
             expect(mockLogger.verbose).toHaveBeenCalledWith(expect.stringMatching(/Worktree path: .*[\\/]\.worktrees[\\/]my-feature/));
             expect(mockLogger.verbose).toHaveBeenCalledWith("Worktree created successfully");
         });
+
+        it("should create worktree with relative path when git is initialized with baseDir", async() => {
+            // This test ensures that when Git is initialized with a baseDir (projectRoot),
+            // we pass a relative path to git worktree add, not an absolute path
+            await executeCreate({name: "my-feature"});
+
+            // Verify that createWorktree was called with a relative path, not absolute
+            expect(mockGit.createWorktree).toHaveBeenCalledWith(".worktrees/my-feature", "my-feature");
+
+            // It should NOT be called with an absolute path
+            expect(mockGit.createWorktree).not.toHaveBeenCalledWith("/repo/.worktrees/my-feature", "my-feature");
+        });
     });
 
     describe("Create Command Definition", () => {

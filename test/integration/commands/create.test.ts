@@ -475,4 +475,88 @@ describe("Create Command Integration Tests", () => {
             });
         });
     });
+
+    describe("Subdirectory Support", () => {
+        it("should create worktree in correct location when run from subdirectory", async() => {
+            await withTestSandbox(async(sandbox) => {
+                const git = await createIsolatedTestRepoWithCommit(sandbox);
+
+                // Change to repo directory and initialize
+                process.chdir(git.path);
+                execSyncWithoutTmux(`node "${WTT_BIN}" init --disable-tmux`, {encoding: "utf-8"});
+
+                // Create a subdirectory and change to it
+                const subdir = path.join(git.path, "src", "components");
+                await fs.mkdir(subdir, {recursive: true});
+                process.chdir(subdir);
+
+                // Create worktree from subdirectory
+                try {
+                    execSyncWithoutTmux(`node "${WTT_BIN}" create test-from-subdir`, {
+                        encoding: "utf-8",
+                        stdio: "pipe",
+                        timeout: 3000,
+                    });
+                } catch {
+                    // Expected timeout
+                }
+
+                // Verify worktree was created in the correct location (repo root, not subdirectory)
+                const correctPath = path.join(git.path, ".worktrees", "test-from-subdir");
+                const incorrectPath = path.join(subdir, ".worktrees", "test-from-subdir");
+
+                const correctExists = await fs.access(correctPath).then(() => true).catch(() => false);
+                const incorrectExists = await fs.access(incorrectPath).then(() => true).catch(() => false);
+
+                expect(correctExists).toBe(true);
+                expect(incorrectExists).toBe(false);
+            });
+        });
+
+        it("should create worktree in correct location when run from existing worktree", async() => {
+            await withTestSandbox(async(sandbox) => {
+                const git = await createIsolatedTestRepoWithCommit(sandbox);
+
+                // Change to repo directory and initialize
+                process.chdir(git.path);
+                execSyncWithoutTmux(`node "${WTT_BIN}" init --disable-tmux`, {encoding: "utf-8"});
+
+                // Create first worktree
+                try {
+                    execSyncWithoutTmux(`node "${WTT_BIN}" create first-worktree`, {
+                        encoding: "utf-8",
+                        stdio: "pipe",
+                        timeout: 3000,
+                    });
+                } catch {
+                    // Expected timeout
+                }
+
+                // Change to the first worktree
+                const firstWorktreePath = path.join(git.path, ".worktrees", "first-worktree");
+                process.chdir(firstWorktreePath);
+
+                // Create second worktree from inside the first worktree
+                try {
+                    execSyncWithoutTmux(`node "${WTT_BIN}" create second-worktree`, {
+                        encoding: "utf-8",
+                        stdio: "pipe",
+                        timeout: 3000,
+                    });
+                } catch {
+                    // Expected timeout
+                }
+
+                // Verify second worktree was created in the correct location
+                const correctPath = path.join(git.path, ".worktrees", "second-worktree");
+                const incorrectPath = path.join(firstWorktreePath, ".worktrees", "second-worktree");
+
+                const correctExists = await fs.access(correctPath).then(() => true).catch(() => false);
+                const incorrectExists = await fs.access(incorrectPath).then(() => true).catch(() => false);
+
+                expect(correctExists).toBe(true);
+                expect(incorrectExists).toBe(false);
+            });
+        });
+    });
 });
