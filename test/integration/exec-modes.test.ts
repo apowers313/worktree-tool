@@ -145,4 +145,33 @@ describe("Exec Modes Integration", () => {
         expect(result).toContain("[feature-d] Output:");
         expect(result).toContain("Inline command test");
     });
+
+    it("handles inline commands with -- when no predefined commands exist", () => {
+        // Initialize wtt config WITHOUT any commands defined
+        const config = {
+            version: "1.0.0",
+            projectName: "test-project",
+            mainBranch: "main",
+            baseDir: ".worktrees",
+            tmux: false,
+            // No commands defined - this is the key to reproducing the bug
+        };
+        writeFileSync(".worktree-config.json", JSON.stringify(config, null, 2));
+
+        // Create a worktree
+        execSync("git worktree add .worktrees/feature-e -b feature-e", {stdio: "ignore"});
+
+        // Run inline command without any options before --
+        // This should work and not throw "No commands configured" error
+        const wttPath = path.join(__dirname, "..", "..", "dist", "index.js");
+        const result = execSync(`node ${wttPath} exec --mode inline -- ls`, {
+            encoding: "utf8",
+            env: {... process.env, WTT_DISABLE_TMUX: "true"},
+        });
+
+        // Should execute successfully and show output from ls
+        expect(result).toContain("[feature-e] Output:");
+        // The output should contain at least some files (like the .git directory)
+        expect(result.toLowerCase()).toMatch(/\.git|readme|package\.json|src/);
+    });
 });

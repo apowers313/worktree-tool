@@ -29,6 +29,7 @@ export const execCommand = new Command("exec")
     )
     .option("-v, --verbose", "Show verbose output")
     .option("-q, --quiet", "Suppress output")
+    .allowUnknownOption()
     .action(async(commandName: string | undefined, args: string[], options: ExecOptions) => {
         try {
             const logger = getLogger(options);
@@ -43,8 +44,23 @@ export const execCommand = new Command("exec")
                 );
             }
 
-            // Parse command
-            const allArgs = commandName ? [commandName, ... args] : args;
+            // Check if -- was used in the original command line after 'exec'
+            // Commander.js strips -- but we need to know if it was there
+            const execIndex = process.argv.indexOf('exec');
+            const hasDoubleDashAfterExec = execIndex >= 0 && 
+                process.argv.slice(execIndex + 1).includes('--');
+
+            // Build the args array for the parser
+            let allArgs: string[];
+            if (hasDoubleDashAfterExec && commandName) {
+                // If -- was used after exec, reconstruct it for the parser
+                allArgs = ["--", commandName, ... args];
+            } else if (commandName) {
+                allArgs = [commandName, ... args];
+            } else {
+                allArgs = args;
+            }
+
             const parsedCommand = parseExecCommand(allArgs, config, options);
 
             // Get worktrees
