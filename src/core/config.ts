@@ -33,7 +33,9 @@ export async function loadConfig(): Promise<WorktreeConfig | null> {
         if (data.commands) {
             for (const [name, command] of Object.entries(data.commands)) {
                 try {
-                    validateCommand(name, command);
+                    // Extract the actual command string for validation
+                    const commandStr = typeof command === "string" ? command : command.command;
+                    validateCommand(name, commandStr);
                 } catch(error) {
                     throw new ConfigError(error instanceof Error ? error.message : "Invalid command");
                 }
@@ -141,9 +143,29 @@ export function validateConfig(config: unknown): config is WorktreeConfig {
             return false;
         }
 
-        // Check that all values are strings
+        // Check that all values are valid CommandConfig (string or object)
         for (const value of Object.values(obj.commands)) {
-            if (typeof value !== "string") {
+            if (typeof value === "string") {
+                // String format is valid
+                continue;
+            } else if (typeof value === "object" && value !== null && !Array.isArray(value)) {
+                // Object format - validate structure
+                const cmdObj = value as Record<string, unknown>;
+
+                // Command property is required and must be string
+                if (typeof cmdObj.command !== "string") {
+                    return false;
+                }
+
+                // Mode property is optional but must be valid if present
+                if (cmdObj.mode !== undefined) {
+                    const validModes = ["window", "inline", "background", "exit"];
+                    if (!validModes.includes(cmdObj.mode as string)) {
+                        return false;
+                    }
+                }
+            } else {
+                // Invalid format
                 return false;
             }
         }
