@@ -26,6 +26,8 @@ export function createMockGit(overrides?: Partial<Git>): Git {
         listWorktrees: vi.fn().mockResolvedValue([]),
         getRepoRoot: vi.fn().mockResolvedValue("/repo"),
         branchExists: vi.fn().mockResolvedValue(false),
+        getWorktreeStatus: vi.fn().mockResolvedValue([]),
+        getAheadBehind: vi.fn().mockResolvedValue({ahead: 0, behind: 0}),
         ... overrides,
     } as unknown as Git;
 }

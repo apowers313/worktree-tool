@@ -91,3 +91,42 @@ export interface GlobalOptions {
     /** Suppress output */
     quiet?: boolean;
 }
+
+/**
+ * Counts for different file status types
+ */
+export interface StatusCounts {
+    add: number;
+    mod: number;
+    del: number;
+    ren: number;
+    copy: number;
+    untracked: number;
+}
+
+/**
+ * Complete worktree status information
+ */
+export interface WorktreeStatus {
+    name: string;
+    path: string;
+    counts: {
+        staged: StatusCounts;
+        unstaged: StatusCounts;
+        conflicts: number;
+        untracked: number;
+    };
+    ahead: number;
+    behind: number;
+    hasConflicts?: boolean;
+}
+
+/**
+ * Options for the status command
+ */
+export interface StatusOptions extends GlobalOptions {
+    /** Filter worktrees by name (comma-separated) */
+    worktrees?: string;
+    /** Show detailed file listing */
+    verbose?: boolean;
+}
