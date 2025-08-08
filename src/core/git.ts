@@ -209,6 +209,79 @@ export class Git {
             throw new GitError(`Failed to check branch existence: ${getErrorMessage(error)}`);
         }
     }
+
+    /**
+     * Get the status of files in a worktree using porcelain format
+     */
+    async getWorktreeStatus(worktreePath: string): Promise<string[]> {
+        try {
+            const result = await this.git.raw(["-C", worktreePath, "status", "--porcelain=v1"]);
+            return result.split("\n").filter((line) => line.trim());
+        } catch(error) {
+            throw new GitError(`Failed to get worktree status: ${getErrorMessage(error)}`);
+        }
+    }
+
+    /**
+     * Get the number of commits ahead and behind the upstream branch
+     */
+    async getAheadBehind(worktreePath: string): Promise<{ahead: number, behind: number}> {
+        try {
+            const [aheadResult, behindResult] = await Promise.all([
+                this.git.raw(["-C", worktreePath, "rev-list", "--count", "@{upstream}..HEAD"]).catch(() => "0"),
+                this.git.raw(["-C", worktreePath, "rev-list", "--count", "HEAD..@{upstream}"]).catch(() => "0"),
+            ]);
+
+            return {
+                ahead: parseInt(aheadResult.trim(), 10) || 0,
+                behind: parseInt(behindResult.trim(), 10) || 0,
+            };
+        } catch {
+            // No upstream branch or other error - return zeros
+            return {ahead: 0, behind: 0};
+        }
+    }
+
+    /**
+     * Get the number of commits ahead and behind compared to another branch
+     */
+    async getAheadBehindBranch(worktreePath: string, targetBranch: string): Promise<{ahead: number, behind: number}> {
+        try {
+            const [aheadResult, behindResult] = await Promise.all([
+                this.git.raw(["-C", worktreePath, "rev-list", "--count", `${targetBranch}..HEAD`]).catch(() => "0"),
+                this.git.raw(["-C", worktreePath, "rev-list", "--count", `HEAD..${targetBranch}`]).catch(() => "0"),
+            ]);
+
+            return {
+                ahead: parseInt(aheadResult.trim(), 10) || 0,
+                behind: parseInt(behindResult.trim(), 10) || 0,
+            };
+        } catch {
+            // Error - return zeros
+            return {ahead: 0, behind: 0};
+        }
+    }
+
+    /**
+     * Check if there would be conflicts merging with target branch
+     */
+    async hasConflicts(worktreePath: string, targetBranch: string): Promise<boolean> {
+        try {
+            // Find merge base
+            const mergeBase = await this.git.raw(["-C", worktreePath, "merge-base", "HEAD", targetBranch]).catch(() => null);
+            if (!mergeBase) {
+                return false;
+            }
+
+            // Try a merge-tree to check for conflicts without actually merging
+            const mergeResult = await this.git.raw(["-C", worktreePath, "merge-tree", mergeBase.trim(), "HEAD", targetBranch]);
+
+            // If merge-tree output contains conflict markers, there are conflicts
+            return mergeResult.includes("<<<<<<<");
+        } catch {
+            return false;
+        }
+    }
 }
 
 /**
