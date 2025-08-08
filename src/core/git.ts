@@ -1,3 +1,4 @@
+import path from "path";
 import simpleGit, {SimpleGit} from "simple-git";
 
 import {getErrorMessage} from "../utils/error-handler.js";
@@ -280,6 +281,203 @@ export class Git {
             return mergeResult.includes("<<<<<<<");
         } catch {
             return false;
+        }
+    }
+
+    /**
+   * Get worktree information by name
+   */
+    async getWorktreeByName(name: string): Promise<WorktreeInfo | null> {
+        try {
+            const worktrees = await this.listWorktrees();
+
+            // First try exact match on branch name (without refs/heads/ prefix)
+            let worktree = worktrees.find((w) => {
+                const branchName = w.branch.replace(/^refs\/heads\//, "");
+                return branchName === name;
+            });
+            if (worktree) {
+                return worktree;
+            }
+
+            // Also try with refs/heads/ prefix
+            worktree = worktrees.find((w) => w.branch === name);
+            if (worktree) {
+                return worktree;
+            }
+
+            // Then try matching the last part of the path
+            worktree = worktrees.find((w) => {
+                const pathParts = w.path.split(path.sep);
+                return pathParts[pathParts.length - 1] === name;
+            });
+
+            return worktree ?? null;
+        } catch(error) {
+            throw new GitError(`Failed to find worktree: ${getErrorMessage(error)}`);
+        }
+    }
+
+    /**
+   * Get the main worktree
+   */
+    async getMainWorktree(): Promise<WorktreeInfo> {
+        const worktrees = await this.listWorktrees();
+        const mainWorktree = worktrees.find((w) => w.isMain);
+
+        if (!mainWorktree) {
+            throw new GitError("Could not find main worktree");
+        }
+
+        return mainWorktree;
+    }
+
+    /**
+   * Check if a worktree has untracked files
+   */
+    async hasUntrackedFiles(worktreePath: string): Promise<boolean> {
+        try {
+            const gitInWorktree = new Git(worktreePath);
+            const status = await gitInWorktree.git.raw(["status", "--porcelain"]);
+
+            // Look for lines starting with "??"
+            return status.split("\n").some((line) => line.startsWith("??"));
+        } catch(error) {
+            throw new GitError(`Failed to check untracked files: ${getErrorMessage(error)}`);
+        }
+    }
+
+    /**
+   * Check if a worktree has uncommitted changes
+   */
+    async hasUncommittedChanges(worktreePath: string): Promise<boolean> {
+        try {
+            const gitInWorktree = new Git(worktreePath);
+            const status = await gitInWorktree.git.raw(["status", "--porcelain"]);
+
+            // Look for modified or deleted files (second character is M or D)
+            return status.split("\n").some((line) => {
+                if (line.length < 2) {
+                    return false;
+                }
+
+                const secondChar = line[1];
+                return secondChar === "M" || secondChar === "D";
+            });
+        } catch(error) {
+            throw new GitError(`Failed to check uncommitted changes: ${getErrorMessage(error)}`);
+        }
+    }
+
+    /**
+   * Check if a worktree has staged changes
+   */
+    async hasStagedChanges(worktreePath: string): Promise<boolean> {
+        try {
+            const gitInWorktree = new Git(worktreePath);
+            const status = await gitInWorktree.git.raw(["status", "--porcelain"]);
+
+            // Look for staged files (first character is not space or ?)
+            return status.split("\n").some((line) => {
+                if (line.length === 0) {
+                    return false;
+                }
+
+                const firstChar = line[0];
+                return firstChar !== " " && firstChar !== "?";
+            });
+        } catch(error) {
+            throw new GitError(`Failed to check staged changes: ${getErrorMessage(error)}`);
+        }
+    }
+
+    /**
+   * Check if a branch has unmerged commits relative to main
+   */
+    async hasUnmergedCommits(branch: string, mainBranch: string): Promise<boolean> {
+        try {
+            // Use rev-list to find commits in branch but not in main
+            const result = await this.git.raw([
+                "rev-list",
+                `${mainBranch}..${branch}`,
+                "--count",
+            ]);
+
+            const count = parseInt(result.trim(), 10);
+            return count > 0;
+        } catch {
+            // If branches don't exist, consider it as having unmerged commits
+            return true;
+        }
+    }
+
+    /**
+   * Check if a branch has stashed changes
+   */
+    async hasStashedChanges(branch: string): Promise<boolean> {
+        try {
+            const stashList = await this.git.stashList();
+
+            // Check if any stash message references this branch
+            return stashList.all.some((stash) => {
+                const message = stash.message || "";
+                // Match patterns like "WIP on branch:" or "On branch:"
+                return message.includes(`on ${branch}:`) ||
+                       message.includes(`On ${branch}:`);
+            });
+        } catch {
+            // If we can't check stashes, assume there are none
+            return false;
+        }
+    }
+
+    /**
+   * Check if a worktree has submodule modifications
+   */
+    async hasSubmoduleModifications(worktreePath: string): Promise<boolean> {
+        try {
+            const gitInWorktree = new Git(worktreePath);
+
+            // Use git submodule status to check for modifications
+            // Modified submodules start with + or -
+            const result = await gitInWorktree.git.raw(["submodule", "status"]);
+
+            if (!result.trim()) {
+                // No submodules
+                return false;
+            }
+
+            // Check if any line starts with + (ahead) or - (behind)
+            return result.split("\n").some((line) => {
+                if (line.length === 0) {
+                    return false;
+                }
+
+                const firstChar = line[0];
+                return firstChar === "+" || firstChar === "-";
+            });
+        } catch {
+            // If submodule command fails, assume no modifications
+            return false;
+        }
+    }
+
+    /**
+   * Remove a worktree
+   */
+    async removeWorktree(worktreePath: string, force = false): Promise<void> {
+        try {
+            const args = ["worktree", "remove"];
+
+            if (force) {
+                args.push("--force");
+            }
+
+            args.push(worktreePath);
+
+            await this.git.raw(args);
+        } catch(error) {
+            throw new GitError(`Failed to remove worktree: ${getErrorMessage(error)}`, {worktreePath});
         }
     }
 }

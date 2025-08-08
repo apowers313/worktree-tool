@@ -1,0 +1,10 @@
+{
+  "version": "1.0.0",
+  "projectName": "worktree-tool",
+  "mainBranch": "master",
+  "baseDir": ".worktrees",
+  "tmux": true,
+  "commands": {
+    "shell": "bash"
+  }
+}
