@@ -599,6 +599,57 @@ describe("exec command", () => {
             // Don't check for absence of verbose, just that quiet is true
         });
     });
+
+    describe("-- separator handling", () => {
+        it("correctly detects -- only after exec command", async() => {
+            // Set up config without any predefined commands to test inline command parsing
+            vi.mocked(config.loadConfig).mockResolvedValue({
+                version: "1.0.0",
+                projectName: "test",
+                mainBranch: "main",
+                baseDir: ".worktrees",
+                tmux: false,
+                // No commands defined - this forces the parser to treat it as inline command
+            } as WorktreeConfig);
+
+            mockGit.listWorktrees.mockResolvedValue([
+                {path: "/project", branch: "main", commit: "abc", isMain: true, isLocked: false},
+                {path: "/project/.worktrees/feature-a", branch: "feature-a", commit: "def", isMain: false, isLocked: false},
+            ] as WorktreeInfo[]);
+
+            // Mock process.argv to simulate edge cases
+            const originalArgv = process.argv;
+            
+            try {
+                // Test case 1: -- appears before exec (should NOT be detected as inline command)
+                process.argv = ['node', 'wtt', '--worktrees=--', 'exec', 'ls'];
+                
+                // This should fail because 'ls' is not a predefined command
+                const result1 = await runCommand(["ls"]);
+                expect(result1.code).toBe(1);
+                expect(mockLogger.error).toHaveBeenCalledWith(
+                    expect.stringContaining("No commands configured")
+                );
+                
+                // Clear mocks
+                vi.clearAllMocks();
+                
+                // Test case 2: -- appears after exec (should be detected as inline command)
+                process.argv = ['node', 'wtt', 'exec', '--', 'ls'];
+                
+                // This should succeed because it's recognized as an inline command
+                const result2 = await runCommand(["ls"]);
+                expect(result2.code).toBe(0);
+                
+                // The key is that it doesn't throw "No commands configured"
+                expect(mockLogger.error).not.toHaveBeenCalledWith(
+                    expect.stringContaining("No commands configured")
+                );
+            } finally {
+                process.argv = originalArgv;
+            }
+        });
+    });
 });
 
 // Helper function to run the command
