@@ -19,6 +19,7 @@ import {
     sanitizeTmuxName,
     switchToTmuxWindow,
     tmuxSessionExists} from "../platform/tmux.js";
+import {getProjectRoot} from "../utils/find-root.js";
 import {getLogger} from "../utils/logger.js";
 
 const execFileAsync = promisify(execFile);
@@ -61,8 +62,11 @@ export async function executeCreate(options: CreateOptions): Promise<void> {
 
         logger.verbose("Checking git repository...");
 
+        // Get the project root directory
+        const projectRoot = await getProjectRoot();
+
         // Check if we're in a git repository
-        const git = createGit();
+        const git = createGit(projectRoot);
         const isRepo = await git.isGitRepository();
 
         if (!isRepo) {
@@ -77,7 +81,7 @@ export async function executeCreate(options: CreateOptions): Promise<void> {
 
         // Sanitize the worktree name
         const sanitizedName = sanitizeWorktreeName(options.name);
-        const worktreePath = path.join(config.baseDir, sanitizedName);
+        const worktreePath = path.join(projectRoot, config.baseDir, sanitizedName);
 
         logger.verbose(`Creating worktree: ${sanitizedName}`);
         logger.verbose(`Worktree path: ${worktreePath}`);
