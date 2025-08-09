@@ -619,31 +619,31 @@ describe("exec command", () => {
 
             // Mock process.argv to simulate edge cases
             const originalArgv = process.argv;
-            
+
             try {
                 // Test case 1: -- appears before exec (should NOT be detected as inline command)
-                process.argv = ['node', 'wtt', '--worktrees=--', 'exec', 'ls'];
-                
+                process.argv = ["node", "wtt", "--worktrees=--", "exec", "ls"];
+
                 // This should fail because 'ls' is not a predefined command
                 const result1 = await runCommand(["ls"]);
                 expect(result1.code).toBe(1);
                 expect(mockLogger.error).toHaveBeenCalledWith(
-                    expect.stringContaining("No commands configured")
+                    expect.stringContaining("No commands configured"),
                 );
-                
+
                 // Clear mocks
                 vi.clearAllMocks();
-                
+
                 // Test case 2: -- appears after exec (should be detected as inline command)
-                process.argv = ['node', 'wtt', 'exec', '--', 'ls'];
-                
+                process.argv = ["node", "wtt", "exec", "--", "ls"];
+
                 // This should succeed because it's recognized as an inline command
                 const result2 = await runCommand(["ls"]);
                 expect(result2.code).toBe(0);
-                
+
                 // The key is that it doesn't throw "No commands configured"
                 expect(mockLogger.error).not.toHaveBeenCalledWith(
-                    expect.stringContaining("No commands configured")
+                    expect.stringContaining("No commands configured"),
                 );
             } finally {
                 process.argv = originalArgv;

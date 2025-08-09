@@ -54,9 +54,9 @@ export const execCommand = new Command("exec")
 
             // Check if -- was used in the original command line after 'exec'
             // Commander.js strips -- but we need to know if it was there
-            const execIndex = process.argv.indexOf('exec');
-            const hasDoubleDashAfterExec = execIndex >= 0 && 
-                process.argv.slice(execIndex + 1).includes('--');
+            const execIndex = process.argv.indexOf("exec");
+            const hasDoubleDashAfterExec = execIndex >= 0 &&
+                process.argv.slice(execIndex + 1).includes("--");
 
             // Build the args array for the parser
             let allArgs: string[];
