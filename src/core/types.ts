@@ -131,6 +131,7 @@ export interface WorktreeStatus {
     ahead: number;
     behind: number;
     hasConflicts?: boolean;
+    potentialConflictCount?: number;
 }
 
 /**

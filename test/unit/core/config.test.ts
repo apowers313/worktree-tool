@@ -624,6 +624,41 @@ describe("Config Management", () => {
             };
             expect(validateConfig(config)).toBe(false);
         });
+
+        it("should accept autoRemove property", () => {
+            const config: WorktreeConfig = {
+                version: "1.0.0",
+                projectName: "test",
+                mainBranch: "main",
+                baseDir: ".worktrees",
+                tmux: false,
+                autoRemove: true,
+            };
+            expect(validateConfig(config)).toBe(true);
+        });
+
+        it("should accept config without autoRemove property", () => {
+            const config: WorktreeConfig = {
+                version: "1.0.0",
+                projectName: "test",
+                mainBranch: "main",
+                baseDir: ".worktrees",
+                tmux: false,
+            };
+            expect(validateConfig(config)).toBe(true);
+        });
+
+        it("should reject non-boolean autoRemove", () => {
+            const config = {
+                version: "1.0.0",
+                projectName: "test",
+                mainBranch: "main",
+                baseDir: ".worktrees",
+                tmux: false,
+                autoRemove: "yes",
+            };
+            expect(validateConfig(config)).toBe(false);
+        });
     });
 
     describe("configExists", () => {

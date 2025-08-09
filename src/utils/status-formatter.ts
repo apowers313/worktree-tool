@@ -25,6 +25,7 @@ const MIXED_COLOR = chalk.yellow;
 const UNSTAGED_COLOR = chalk.white;
 const UNTRACKED_COLOR = chalk.gray;
 const CONFLICT_COLOR = chalk.red;
+const POTENTIAL_CONFLICT_COLOR = chalk.hex("#FFA500"); // orange
 const DEFAULT_COLOR = (text: string): string => text;
 
 /**
@@ -36,9 +37,13 @@ export function formatWorktreeStatus(status: WorktreeStatus, maxNameLength: numb
 
     const statusParts: string[] = [];
 
-    // Conflicts first (red)
+    // Conflicts first
     if (status.counts.conflicts > 0) {
         statusParts.push(CONFLICT_COLOR(`${STATUS_SYMBOLS.conflict}${String(status.counts.conflicts)}`));
+    } else if (status.hasConflicts) {
+        // Potential conflicts (orange)
+        const count = status.potentialConflictCount || 1;
+        statusParts.push(POTENTIAL_CONFLICT_COLOR(`${STATUS_SYMBOLS.conflict}${String(count)}`));
     }
 
     // Check for each file type - determine if staged only, unstaged only, or mixed
@@ -149,7 +154,9 @@ export function displayLegend(): void {
     // eslint-disable-next-line no-console
     console.log(`  ${UNTRACKED_COLOR("grey")}: untracked changes`);
     // eslint-disable-next-line no-console
-    console.log(`  ${CONFLICT_COLOR("red")}: conflicts\n`);
+    console.log(`  ${CONFLICT_COLOR("red")}: active conflicts`);
+    // eslint-disable-next-line no-console
+    console.log(`  ${POTENTIAL_CONFLICT_COLOR("orange")}: potential conflicts\n`);
 }
 
 /**

@@ -176,6 +176,11 @@ export function validateConfig(config: unknown): config is WorktreeConfig {
         }
     }
 
+    // Validate optional autoRemove field
+    if (obj.autoRemove !== undefined && typeof obj.autoRemove !== "boolean") {
+        return false;
+    }
+
     return true;
 }
 

@@ -540,6 +540,13 @@ export class Git {
     async fetch(): Promise<void> {
         await this.git.raw(["fetch", "--all"]);
     }
+
+    /**
+     * Execute a raw git command
+     */
+    async raw(args: string[]): Promise<string> {
+        return this.git.raw(args);
+    }
 }
 
 /**
