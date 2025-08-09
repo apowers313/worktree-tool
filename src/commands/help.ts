@@ -28,6 +28,9 @@ function showGeneralHelp(): void {
     console.log("  init         Initialize a worktree project in the current repository");
     console.log("  create       Create a new worktree and open it in a shell or tmux window");
     console.log("  exec         Execute a predefined command in one or more worktrees");
+    console.log("  status       Show git status across all worktrees");
+    console.log("  remove       Remove git worktrees with safety checks");
+    console.log("  merge        Merge worktree changes back to main branch");
     console.log("  help         Display help information");
     console.log();
     console.log("Examples:");
@@ -35,7 +38,9 @@ function showGeneralHelp(): void {
     console.log("  wtt init --project-name=myapp --disable-tmux");
     console.log("  wtt create feature-xyz       # Create worktree for feature-xyz");
     console.log("  wtt exec test                # Run 'test' command in all worktrees");
-    console.log("  wtt exec build main          # Run 'build' command in main worktree only");
+    console.log("  wtt status                   # Show status of all worktrees");
+    console.log("  wtt remove feature-xyz       # Remove a worktree");
+    console.log("  wtt merge                    # Merge current worktree to main");
     console.log("  wtt help init               # Show help for init command");
     console.log();
     console.log("Run 'wtt help <command>' for more information on a specific command.");

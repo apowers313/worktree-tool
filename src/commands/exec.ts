@@ -6,7 +6,7 @@ import {createGit} from "../core/git.js";
 import {WorktreeConfig, WorktreeInfo} from "../core/types.js";
 import {ExecutionContext} from "../exec/modes/base.js";
 import {createExecutionMode} from "../exec/modes/factory.js";
-import {ExecOptions, parseExecCommand} from "../exec/parser.js";
+import {parseExecCommand} from "../exec/parser.js";
 import {
     attachToTmuxSession,
     canAttachToTmux,
@@ -17,11 +17,13 @@ import {
 import {getErrorMessage, handleCommandError} from "../utils/error-handler.js";
 import {WorktreeToolError} from "../utils/errors.js";
 import {getProjectRoot} from "../utils/find-root.js";
-import {getLogger, Logger} from "../utils/logger.js";
+import {getLogger} from "../utils/logger.js";
 
-interface ExecOptions {
+interface ExecCommandOptions {
     verbose?: boolean;
     quiet?: boolean;
+    worktrees?: string;
+    mode?: "window" | "inline" | "background" | "exit";
 }
 
 export const execCommand = new Command("exec")
@@ -35,7 +37,7 @@ export const execCommand = new Command("exec")
     )
     .option("-v, --verbose", "Show verbose output")
     .option("-q, --quiet", "Suppress output")
-    .action(async(commandName: string | undefined, args: string[], options: ExecOptions) => {
+    .action(async(commandName: string | undefined, args: string[], options: ExecCommandOptions) => {
         try {
             const logger = getLogger(options);
 
@@ -51,7 +53,11 @@ export const execCommand = new Command("exec")
 
             // Parse command
             const allArgs = commandName ? [commandName, ... args] : args;
-            const parsedCommand = parseExecCommand(allArgs, config, options);
+            const parsedCommand = parseExecCommand(allArgs, config, {
+                mode: options.mode,
+                verbose: options.verbose,
+                quiet: options.quiet,
+            });
 
             // Get project root and worktrees
             const projectRoot = await getProjectRoot();

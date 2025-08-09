@@ -480,6 +480,66 @@ export class Git {
             throw new GitError(`Failed to remove worktree: ${getErrorMessage(error)}`, {worktreePath});
         }
     }
+
+    /**
+     * Get current branch name
+     */
+    async getCurrentBranch(): Promise<string> {
+        const result = await this.git.raw(["rev-parse", "--abbrev-ref", "HEAD"]);
+        return result.trim();
+    }
+
+    /**
+     * Check if a merge resulted in conflicts
+     */
+    async hasMergeConflicts(): Promise<boolean> {
+        try {
+            const result = await this.git.raw(["diff", "--name-only", "--diff-filter=U"]);
+            return result.trim().length > 0;
+        } catch {
+            return false;
+        }
+    }
+
+    /**
+     * Get list of conflicted files
+     */
+    async getConflictedFiles(): Promise<string[]> {
+        const result = await this.git.raw(["diff", "--name-only", "--diff-filter=U"]);
+        return result.trim().split("\n").filter(Boolean);
+    }
+
+    /**
+     * Perform a merge
+     */
+    async merge(branch: string, message?: string): Promise<{success: boolean, conflicts: boolean}> {
+        try {
+            const args = ["merge", "--no-ff"];
+            if (message) {
+                args.push("-m", message);
+            }
+
+            args.push(branch);
+
+            await this.git.raw(args);
+            return {success: true, conflicts: false};
+        } catch(error) {
+            // Check if it's a merge conflict
+            const hasConflicts = await this.hasMergeConflicts();
+            if (hasConflicts) {
+                return {success: false, conflicts: true};
+            }
+
+            throw error;
+        }
+    }
+
+    /**
+     * Fetch latest changes
+     */
+    async fetch(): Promise<void> {
+        await this.git.raw(["fetch", "--all"]);
+    }
 }
 
 /**

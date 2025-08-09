@@ -28,6 +28,8 @@ export interface WorktreeConfig {
     tmux: boolean;
     /** User-defined commands to execute in worktrees */
     commands?: Record<string, CommandConfig>;
+    /** Auto-remove worktree after successful merge */
+    autoRemove?: boolean;
 }
 
 /**
