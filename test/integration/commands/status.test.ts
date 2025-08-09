@@ -243,8 +243,8 @@ describe("Status Command Integration Tests", () => {
 
                 // Create a file in main
                 await fs.writeFile(path.join(git.path, "conflict.txt"), "main content");
-                await repo.add("conflict.txt");
-                await repo.commit("Add conflict file in main");
+                await git.add("conflict.txt");
+                await git.commit("Add conflict file in main");
 
                 // Create a worktree
                 execSyncWithoutTmux(`node "${WTT_BIN}" create conflict-branch`, {
@@ -281,7 +281,7 @@ describe("Status Command Integration Tests", () => {
         it("should handle empty repository", async() => {
             await withTestSandbox(async(sandbox) => {
                 // Create empty git repo (no commits)
-                const repoPath = path.join(sandbox.path, "empty-repo");
+                const repoPath = path.join(sandbox.getWorkspacePath(), "empty-repo");
                 await fs.mkdir(repoPath);
                 const repo = simpleGit(repoPath);
                 await repo.init();

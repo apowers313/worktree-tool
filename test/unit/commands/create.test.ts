@@ -408,7 +408,9 @@ describe("Create Command", () => {
             await executeCreate({name: "my-feature"});
 
             // Verify that createWorktree was called with a relative path, not absolute
-            expect(mockGit.createWorktree).toHaveBeenCalledWith(".worktrees/my-feature", "my-feature");
+            // Handle both Unix and Windows path separators
+            const expectedPath = path.join(".worktrees", "my-feature");
+            expect(mockGit.createWorktree).toHaveBeenCalledWith(expectedPath, "my-feature");
 
             // It should NOT be called with an absolute path
             expect(mockGit.createWorktree).not.toHaveBeenCalledWith("/repo/.worktrees/my-feature", "my-feature");

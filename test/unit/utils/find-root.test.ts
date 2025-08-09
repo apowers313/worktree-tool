@@ -26,7 +26,7 @@ describe("findProjectRoot", () => {
         process.chdir(tempDir);
         const root = await findProjectRoot();
 
-        expect(root).toBe(tempDir);
+        expect(root).toBe(await fs.realpath(tempDir));
     });
 
     it("should find config in parent directory", async() => {
@@ -39,7 +39,7 @@ describe("findProjectRoot", () => {
         process.chdir(subDir);
         const root = await findProjectRoot();
 
-        expect(root).toBe(tempDir);
+        expect(root).toBe(await fs.realpath(tempDir));
     });
 
     it("should return null if no config found", async() => {
@@ -69,7 +69,7 @@ describe("findProjectRoot", () => {
         process.chdir(subDir);
         const root = await findProjectRoot();
 
-        expect(root).toBe(projectDir);
+        expect(root).toBe(await fs.realpath(projectDir));
     });
 
     it("should stop searching at boundary marker even without config below", async() => {
@@ -114,7 +114,7 @@ describe("getProjectRoot", () => {
         process.chdir(tempDir);
         const root = await getProjectRoot();
 
-        expect(root).toBe(tempDir);
+        expect(root).toBe(await fs.realpath(tempDir));
     });
 
     it("should throw when no config found", async() => {

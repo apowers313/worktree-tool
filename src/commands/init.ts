@@ -105,9 +105,6 @@ export async function executeInit(options: InitOptions): Promise<void> {
             tmux,
             autoSort: true,
             availablePorts: "9000-9099",
-            commands: {
-                shell: "bash",
-            },
         };
 
         logger.verbose("Saving configuration...");

@@ -1,4 +1,3 @@
-import path from "path";
 import simpleGit, {SimpleGit} from "simple-git";
 
 import {getErrorMessage} from "../utils/error-handler.js";
@@ -308,7 +307,8 @@ export class Git {
 
             // Then try matching the last part of the path
             worktree = worktrees.find((w) => {
-                const pathParts = w.path.split(path.sep);
+                // Split on both Unix and Windows separators to handle cross-platform paths
+                const pathParts = w.path.split(/[/\\]/);
                 return pathParts[pathParts.length - 1] === name;
             });
 
