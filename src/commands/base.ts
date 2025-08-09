@@ -34,11 +34,21 @@ export abstract class BaseCommand<TOptions extends CommandOptions = CommandOptio
         return false;
     }
 
+    /**
+     * Whether to show verbose status messages during execution
+     */
+    protected showVerboseStatus(): boolean {
+        return true;
+    }
+
     async execute(options: TOptions): Promise<void> {
         const logger = getLogger(options);
 
         try {
-            logger.verbose("Validating options...");
+            if (this.showVerboseStatus()) {
+                logger.verbose("Validating options...");
+            }
+
             this.validateOptions(options);
 
             // Find project root if we need config or git
@@ -55,7 +65,10 @@ export abstract class BaseCommand<TOptions extends CommandOptions = CommandOptio
 
             // Load config if required
             if (this.requiresConfig()) {
-                logger.verbose("Loading configuration...");
+                if (this.showVerboseStatus()) {
+                    logger.verbose("Loading configuration...");
+                }
+
                 context.config = await loadConfig();
                 if (!context.config) {
                     throw new ConfigError("Repository not initialized. Run \"wtt init\" first");
@@ -64,7 +77,10 @@ export abstract class BaseCommand<TOptions extends CommandOptions = CommandOptio
 
             // Check git repository if required
             if (this.requiresGitRepo()) {
-                logger.verbose("Checking git repository...");
+                if (this.showVerboseStatus()) {
+                    logger.verbose("Checking git repository...");
+                }
+
                 const isRepo = await context.git.isGitRepository();
                 if (!isRepo) {
                     throw new GitError(GIT_ERRORS.NOT_A_REPO);

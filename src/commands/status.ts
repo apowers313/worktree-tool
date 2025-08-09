@@ -1,3 +1,4 @@
+import chalk from "chalk";
 import {Command} from "commander";
 import {basename} from "path";
 
@@ -17,6 +18,10 @@ export class StatusCommand extends BaseCommand<StatusOptions> {
         return true;
     }
 
+    protected override showVerboseStatus(): boolean {
+        return false;
+    }
+
     protected override validateOptions(
         /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
         _options: StatusOptions,
@@ -26,14 +31,10 @@ export class StatusCommand extends BaseCommand<StatusOptions> {
     }
 
     protected override async executeCommand(options: StatusOptions, context: CommandContext): Promise<void> {
-        const {logger, git, config} = context;
-
-        logger.verbose("Executing status command");
-        logger.verbose(`Verbose mode: ${String(options.verbose)}`);
+        const {git, config} = context;
 
         // Get all worktrees
         const worktrees = await git.listWorktrees();
-        logger.verbose(`Found ${String(worktrees.length)} worktrees`);
 
         // Find the main worktree
         const mainWorktree = worktrees.find((w) => w.isMain);
@@ -52,12 +53,12 @@ export class StatusCommand extends BaseCommand<StatusOptions> {
         if (options.worktrees) {
             const filter = options.worktrees.split(",").map((w) => w.trim());
             filteredWorktrees = worktreesWithNames.filter((w) => filter.includes(w.name));
-            logger.verbose(`Filtered to ${String(filteredWorktrees.length)} worktrees: ${filter.join(", ")}`);
         }
 
         // Collect status for each worktree with raw status lines if verbose
         interface VerboseWorktreeStatus extends WorktreeStatus {
             statusLines?: string[];
+            potentialConflictFiles?: string[];
         }
 
         const statusPromises = filteredWorktrees.map(async(worktree): Promise<VerboseWorktreeStatus> => {
@@ -69,6 +70,20 @@ export class StatusCommand extends BaseCommand<StatusOptions> {
 
             const counts = countStatuses(statusLines);
 
+            // If there are no active conflicts but hasConflicts is true, get the files that would conflict
+            let potentialConflictFiles: string[] = [];
+            if (hasConflicts && counts.conflicts === 0) {
+                // Simple approach: get files changed in this branch vs main
+                try {
+                    const result = await git.raw(["-C", worktree.path, "diff", "--name-only", mainBranch]);
+                    potentialConflictFiles = result.split("\n").filter((f) => f.trim());
+                } catch {
+                    // If we can't get the list of files, we still know there's at least one conflict
+                    // Set a dummy entry so the count is at least 1
+                    potentialConflictFiles = ["<unknown>"];
+                }
+            }
+
             return {
                 name: worktree.name,
                 path: worktree.path,
@@ -76,7 +91,9 @@ export class StatusCommand extends BaseCommand<StatusOptions> {
                 ahead: mainComparison.ahead,
                 behind: mainComparison.behind,
                 hasConflicts,
+                potentialConflictCount: potentialConflictFiles.length,
                 statusLines: options.verbose ? statusLines : undefined,
+                potentialConflictFiles,
             };
         });
 
@@ -97,13 +114,23 @@ export class StatusCommand extends BaseCommand<StatusOptions> {
             console.log(formatted);
 
             // Display file listing if verbose
-            if (options.verbose && status.statusLines && status.statusLines.length > 0) {
-                displayVerboseFiles(status.statusLines);
+            if (options.verbose) {
+                // First display potential conflict files if any
+                if (status.potentialConflictFiles && status.potentialConflictFiles.length > 0) {
+                    const orangeColor = chalk.hex("#FFA500");
+                    for (const file of status.potentialConflictFiles) {
+                        // eslint-disable-next-line no-console
+                        console.log(`${orangeColor("(!)")} ${file}`);
+                    }
+                }
+
+                // Then display regular status files
+                if (status.statusLines && status.statusLines.length > 0) {
+                    displayVerboseFiles(status.statusLines);
+                }
+
                 // eslint-disable-next-line no-console
                 console.log(); // Empty line between worktrees
-            } else if (options.verbose) {
-                // eslint-disable-next-line no-console
-                console.log(); // Empty line even if no files
             }
         }
     }

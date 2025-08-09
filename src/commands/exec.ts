@@ -21,7 +21,7 @@ import {getProjectRoot} from "../utils/find-root.js";
 import {getLogger} from "../utils/logger.js";
 import {portManager} from "../utils/port-manager.js";
 
-interface ExecOptions {
+interface ExecCommandOptions {
     verbose?: boolean;
     quiet?: boolean;
     worktrees?: string;
@@ -42,7 +42,7 @@ export const execCommand = new Command("exec")
     .option("-v, --verbose", "Show verbose output")
     .option("-q, --quiet", "Suppress output")
     .allowUnknownOption()
-    .action(async(commandName: string | undefined, args: string[], options: ExecOptions) => {
+    .action(async(commandName: string | undefined, args: string[], options: ExecCommandOptions) => {
         try {
             const logger = getLogger(options);
 

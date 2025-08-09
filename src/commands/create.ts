@@ -92,8 +92,10 @@ export async function executeCreate(options: CreateOptions): Promise<void> {
         const absoluteWorktreePath = path.resolve(worktreePath);
 
         // Create the worktree based on main branch
+        // Since git is created with projectRoot as baseDir, we need to pass a relative path
+        const relativeWorktreePath = path.join(config.baseDir, sanitizedName);
         try {
-            await git.createWorktree(worktreePath, sanitizedName);
+            await git.createWorktree(relativeWorktreePath, sanitizedName);
         } catch(error) {
             // Check if the error is about HEAD not being valid (in case our check missed it)
             const errorMessage = getErrorMessage(error);

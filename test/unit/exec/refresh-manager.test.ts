@@ -16,6 +16,9 @@ describe("RefreshManager", () => {
         info: vi.fn(),
         error: vi.fn(),
         success: vi.fn(),
+        verbose: vi.fn(),
+        log: vi.fn(),
+        getLevel: vi.fn(),
     } as unknown as Logger;
 
     const baseConfig = {

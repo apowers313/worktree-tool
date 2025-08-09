@@ -165,6 +165,11 @@ export function validateConfig(config: unknown): config is WorktreeConfig {
         }
     }
 
+    // Validate optional autoRemove field
+    if (obj.autoRemove !== undefined && typeof obj.autoRemove !== "boolean") {
+        return false;
+    }
+
     // Validate optional commands field
     if (obj.commands !== undefined) {
         if (typeof obj.commands !== "object" || obj.commands === null || Array.isArray(obj.commands)) {
@@ -207,6 +212,11 @@ export function validateConfig(config: unknown): config is WorktreeConfig {
                 return false;
             }
         }
+    }
+
+    // Validate optional autoRemove field
+    if (obj.autoRemove !== undefined && typeof obj.autoRemove !== "boolean") {
+        return false;
     }
 
     return true;
