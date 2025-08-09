@@ -110,6 +110,24 @@ describe("Config Management", () => {
                 expect(result).toEqual(config);
             });
 
+            it("should load configuration with autoRemove property", async() => {
+                const config: WorktreeConfig = {
+                    version: "1.0.0",
+                    projectName: "test-project",
+                    mainBranch: "main",
+                    baseDir: ".worktrees",
+                    tmux: true,
+                    autoRemove: true,
+                };
+
+                mockFs.readFile.mockResolvedValue(JSON.stringify(config));
+
+                const result = await loadConfig();
+
+                expect(result).toEqual(config);
+                expect(result.autoRemove).toBe(true);
+            });
+
             it("should throw ConfigError for empty command string", async() => {
                 const config = {
                     version: "1.0.0",
@@ -148,6 +166,67 @@ describe("Config Management", () => {
                 // This will fail at validateConfig stage with generic error
                 await expect(loadConfig()).rejects.toThrow(ConfigError);
                 await expect(loadConfig()).rejects.toThrow("Invalid configuration format");
+            });
+
+            it("should load configuration with object format commands", async() => {
+                const config: WorktreeConfig = {
+                    version: "1.0.0",
+                    projectName: "test-project",
+                    mainBranch: "main",
+                    baseDir: ".worktrees",
+                    tmux: true,
+                    commands: {
+                        test: {command: "npm test", mode: "exit"},
+                        build: {command: "npm run build", mode: "window"},
+                        watch: {command: "npm run watch", mode: "background"},
+                        lint: {command: "npm run lint", mode: "inline"},
+                    },
+                };
+
+                mockFs.readFile.mockResolvedValue(JSON.stringify(config));
+
+                const result = await loadConfig();
+
+                expect(result).toEqual(config);
+            });
+
+            it("should load configuration with mixed format commands", async() => {
+                const config: WorktreeConfig = {
+                    version: "1.0.0",
+                    projectName: "test-project",
+                    mainBranch: "main",
+                    baseDir: ".worktrees",
+                    tmux: true,
+                    commands: {
+                        test: "npm test",
+                        build: {command: "npm run build", mode: "exit"},
+                        watch: {command: "npm run watch"},
+                    },
+                };
+
+                mockFs.readFile.mockResolvedValue(JSON.stringify(config));
+
+                const result = await loadConfig();
+
+                expect(result).toEqual(config);
+            });
+
+            it("should throw ConfigError for empty command string in object format", async() => {
+                const config = {
+                    version: "1.0.0",
+                    projectName: "test-project",
+                    mainBranch: "main",
+                    baseDir: ".worktrees",
+                    tmux: true,
+                    commands: {
+                        test: {command: "", mode: "exit"},
+                    },
+                };
+
+                mockFs.readFile.mockResolvedValue(JSON.stringify(config));
+
+                await expect(loadConfig()).rejects.toThrow(ConfigError);
+                await expect(loadConfig()).rejects.toThrow("Invalid command \"test\": command must be a non-empty string");
             });
         });
     });
@@ -412,6 +491,138 @@ describe("Config Management", () => {
 
                 expect(validateConfig(config)).toBe(false);
             });
+
+            it("should accept object format commands with mode", () => {
+                const config = {
+                    version: "1.0.0",
+                    projectName: "test",
+                    mainBranch: "main",
+                    baseDir: ".worktrees",
+                    tmux: true,
+                    commands: {
+                        test: {command: "npm test", mode: "exit"},
+                        build: {command: "npm run build", mode: "window"},
+                        watch: {command: "npm run watch", mode: "background"},
+                        lint: {command: "npm run lint", mode: "inline"},
+                    },
+                };
+
+                expect(validateConfig(config)).toBe(true);
+            });
+
+            it("should accept object format commands without mode", () => {
+                const config = {
+                    version: "1.0.0",
+                    projectName: "test",
+                    mainBranch: "main",
+                    baseDir: ".worktrees",
+                    tmux: true,
+                    commands: {
+                        test: {command: "npm test"},
+                        build: {command: "npm run build"},
+                    },
+                };
+
+                expect(validateConfig(config)).toBe(true);
+            });
+
+            it("should accept mixed string and object format commands", () => {
+                const config = {
+                    version: "1.0.0",
+                    projectName: "test",
+                    mainBranch: "main",
+                    baseDir: ".worktrees",
+                    tmux: true,
+                    commands: {
+                        test: "npm test",
+                        build: {command: "npm run build", mode: "exit"},
+                        lint: "npm run lint",
+                        watch: {command: "npm run watch", mode: "background"},
+                    },
+                };
+
+                expect(validateConfig(config)).toBe(true);
+            });
+
+            it("should reject object format without command property", () => {
+                const config = {
+                    version: "1.0.0",
+                    projectName: "test",
+                    mainBranch: "main",
+                    baseDir: ".worktrees",
+                    tmux: true,
+                    commands: {
+                        test: {mode: "exit"},
+                    },
+                };
+
+                expect(validateConfig(config)).toBe(false);
+            });
+
+            it("should reject object format with non-string command", () => {
+                const config = {
+                    version: "1.0.0",
+                    projectName: "test",
+                    mainBranch: "main",
+                    baseDir: ".worktrees",
+                    tmux: true,
+                    commands: {
+                        test: {command: 123, mode: "exit"},
+                    },
+                };
+
+                expect(validateConfig(config)).toBe(false);
+            });
+
+            it("should reject object format with invalid mode", () => {
+                const config = {
+                    version: "1.0.0",
+                    projectName: "test",
+                    mainBranch: "main",
+                    baseDir: ".worktrees",
+                    tmux: true,
+                    commands: {
+                        test: {command: "npm test", mode: "invalid"},
+                    },
+                };
+
+                expect(validateConfig(config)).toBe(false);
+            });
+        });
+
+        it("should accept autoRemove property", () => {
+            const config: WorktreeConfig = {
+                version: "1.0.0",
+                projectName: "test",
+                mainBranch: "main",
+                baseDir: ".worktrees",
+                tmux: false,
+                autoRemove: true,
+            };
+            expect(validateConfig(config)).toBe(true);
+        });
+
+        it("should accept config without autoRemove property", () => {
+            const config: WorktreeConfig = {
+                version: "1.0.0",
+                projectName: "test",
+                mainBranch: "main",
+                baseDir: ".worktrees",
+                tmux: false,
+            };
+            expect(validateConfig(config)).toBe(true);
+        });
+
+        it("should reject non-boolean autoRemove", () => {
+            const config = {
+                version: "1.0.0",
+                projectName: "test",
+                mainBranch: "main",
+                baseDir: ".worktrees",
+                tmux: false,
+                autoRemove: "yes",
+            };
+            expect(validateConfig(config)).toBe(false);
         });
     });
 

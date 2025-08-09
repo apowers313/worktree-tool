@@ -3,6 +3,16 @@
  */
 
 /**
+ * Command configuration - can be either a simple string or an object with mode
+ */
+export type CommandConfig = string | {
+    /** The command to execute */
+    command: string;
+    /** Execution mode for this command */
+    mode?: "window" | "inline" | "background" | "exit";
+};
+
+/**
  * Configuration structure for wtt
  */
 export interface WorktreeConfig {
@@ -17,7 +27,9 @@ export interface WorktreeConfig {
     /** Whether tmux integration is enabled */
     tmux: boolean;
     /** User-defined commands to execute in worktrees */
-    commands?: Record<string, string>;
+    commands?: Record<string, CommandConfig>;
+    /** Auto-remove worktree after successful merge */
+    autoRemove?: boolean;
 }
 
 /**

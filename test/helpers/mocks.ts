@@ -1,6 +1,8 @@
 import {SpyInstance, vi} from "vitest";
 
+import {CommandContext} from "../../src/commands/base";
 import {Git} from "../../src/core/git";
+import {WorktreeConfig} from "../../src/core/types";
 import {Logger} from "../../src/utils/logger";
 
 export function createMockLogger(overrides?: Partial<Logger>): Logger {
@@ -28,6 +30,21 @@ export function createMockGit(overrides?: Partial<Git>): Git {
         branchExists: vi.fn().mockResolvedValue(false),
         getWorktreeStatus: vi.fn().mockResolvedValue([]),
         getAheadBehind: vi.fn().mockResolvedValue({ahead: 0, behind: 0}),
+        getWorktreeByName: vi.fn().mockResolvedValue(null),
+        getMainWorktree: vi.fn().mockResolvedValue({
+            path: "/repo",
+            branch: "refs/heads/main",
+            isMain: true,
+            isLocked: false,
+            commit: "abc123",
+        }),
+        hasUntrackedFiles: vi.fn().mockResolvedValue(false),
+        hasUncommittedChanges: vi.fn().mockResolvedValue(false),
+        hasStagedChanges: vi.fn().mockResolvedValue(false),
+        hasUnmergedCommits: vi.fn().mockResolvedValue(false),
+        hasStashedChanges: vi.fn().mockResolvedValue(false),
+        hasSubmoduleModifications: vi.fn().mockResolvedValue(false),
+        removeWorktree: vi.fn().mockResolvedValue(undefined),
         ... overrides,
     } as unknown as Git;
 }
@@ -43,4 +60,17 @@ export class ProcessExitError extends Error {
         super(`Process exited with code ${String(code)}`);
         this.name = "ProcessExitError";
     }
+}
+
+export function createMockContext(overrides?: Partial<CommandContext>): CommandContext {
+    return {
+        logger: createMockLogger(),
+        git: createMockGit(),
+        config: {
+            baseDir: ".worktrees",
+            projectName: "test-project",
+            tmux: false,
+        } as WorktreeConfig,
+        ... overrides,
+    };
 }

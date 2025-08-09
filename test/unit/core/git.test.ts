@@ -347,6 +347,193 @@ bare
         });
     });
 
+    describe("getWorktreeByName", () => {
+        it("should find worktree by exact branch name", async() => {
+            mockGit.raw.mockResolvedValue("worktree /repo\nHEAD abc\nbranch refs/heads/main\n\nworktree /repo/.worktrees/feature-1\nHEAD def\nbranch refs/heads/feature-1\n");
+
+            const result = await git.getWorktreeByName("feature-1");
+
+            expect(result).toBeTruthy();
+            expect(result?.branch).toBe("refs/heads/feature-1");
+            expect(result?.path).toBe("/repo/.worktrees/feature-1");
+        });
+
+        it("should find worktree by directory name", async() => {
+            mockGit.raw.mockResolvedValue("worktree /repo\nHEAD abc\nbranch refs/heads/main\n\nworktree /repo/.worktrees/my-feature\nHEAD def\nbranch refs/heads/feature/xyz\n");
+
+            const result = await git.getWorktreeByName("my-feature");
+
+            expect(result).toBeTruthy();
+            expect(result?.branch).toBe("refs/heads/feature/xyz");
+            expect(result?.path).toBe("/repo/.worktrees/my-feature");
+        });
+
+        it("should return null if worktree not found", async() => {
+            mockGit.raw.mockResolvedValue("");
+
+            const result = await git.getWorktreeByName("nonexistent");
+
+            expect(result).toBeNull();
+        });
+
+        it("should throw GitError on failure", async() => {
+            mockGit.raw.mockRejectedValue(new Error("Git error"));
+
+            await expect(git.getWorktreeByName("test")).rejects.toThrow(GitError);
+            await expect(git.getWorktreeByName("test")).rejects.toThrow("Failed to find worktree");
+        });
+    });
+
+    describe("getMainWorktree", () => {
+        it("should return the main worktree", async() => {
+            mockGit.raw.mockResolvedValue("worktree /repo\nHEAD abc\nbranch refs/heads/main\n\nworktree /repo/.worktrees/feature-1\nHEAD def\nbranch refs/heads/feature-1\n");
+
+            const result = await git.getMainWorktree();
+
+            expect(result).toBeTruthy();
+            expect(result.isMain).toBe(true);
+            expect(result.path).toBe("/repo");
+        });
+
+        it("should throw error if main worktree not found", async() => {
+            mockGit.raw.mockResolvedValue("");
+
+            await expect(git.getMainWorktree()).rejects.toThrow(GitError);
+            await expect(git.getMainWorktree()).rejects.toThrow("Could not find main worktree");
+        });
+    });
+
+    describe("hasUnmergedCommits", () => {
+        it("should return true when branch has unmerged commits", async() => {
+            mockGit.raw.mockResolvedValue("3\n");
+
+            const result = await git.hasUnmergedCommits("feature", "main");
+
+            expect(result).toBe(true);
+            expect(mockGit.raw).toHaveBeenCalledWith([
+                "rev-list",
+                "main..feature",
+                "--count",
+            ]);
+        });
+
+        it("should return false when branch is fully merged", async() => {
+            mockGit.raw.mockResolvedValue("0\n");
+
+            const result = await git.hasUnmergedCommits("feature", "main");
+
+            expect(result).toBe(false);
+        });
+
+        it("should return true on error", async() => {
+            mockGit.raw.mockRejectedValue(new Error("Branch not found"));
+
+            const result = await git.hasUnmergedCommits("nonexistent", "main");
+
+            expect(result).toBe(true);
+        });
+    });
+
+    describe("hasStashedChanges", () => {
+        it("should return true when branch has stashes", async() => {
+            mockGit.stashList = vi.fn().mockResolvedValue({
+                all: [
+                    {message: "WIP on feature-branch: 123abc Fix bug"},
+                    {message: "On main: 456def Update docs"},
+                ],
+            });
+
+            const result = await git.hasStashedChanges("feature-branch");
+
+            expect(result).toBe(true);
+            expect(mockGit.stashList).toHaveBeenCalled();
+        });
+
+        it("should return false when branch has no stashes", async() => {
+            mockGit.stashList = vi.fn().mockResolvedValue({
+                all: [
+                    {message: "WIP on other-branch: 123abc Fix bug"},
+                    {message: "On main: 456def Update docs"},
+                ],
+            });
+
+            const result = await git.hasStashedChanges("feature-branch");
+
+            expect(result).toBe(false);
+        });
+
+        it("should return false when stash list is empty", async() => {
+            mockGit.stashList = vi.fn().mockResolvedValue({
+                all: [],
+            });
+
+            const result = await git.hasStashedChanges("feature-branch");
+
+            expect(result).toBe(false);
+        });
+
+        it("should handle stashes with capital On", async() => {
+            mockGit.stashList = vi.fn().mockResolvedValue({
+                all: [
+                    {message: "On feature-branch: 123abc Fix bug"},
+                ],
+            });
+
+            const result = await git.hasStashedChanges("feature-branch");
+
+            expect(result).toBe(true);
+        });
+
+        it("should handle stashes without message", async() => {
+            mockGit.stashList = vi.fn().mockResolvedValue({
+                all: [
+                    {message: null},
+                    {message: undefined},
+                    {message: ""},
+                ],
+            });
+
+            const result = await git.hasStashedChanges("feature-branch");
+
+            expect(result).toBe(false);
+        });
+
+        it("should return false on error", async() => {
+            mockGit.stashList = vi.fn().mockRejectedValue(new Error("Git error"));
+
+            const result = await git.hasStashedChanges("feature-branch");
+
+            expect(result).toBe(false);
+        });
+    });
+
+    describe("removeWorktree", () => {
+        it("should remove worktree without force", async() => {
+            mockGit.raw.mockResolvedValue("");
+
+            await git.removeWorktree("/path/to/worktree");
+
+            expect(mockGit.raw).toHaveBeenCalledWith(["worktree", "remove", "/path/to/worktree"]);
+        });
+
+        it("should remove worktree with force", async() => {
+            mockGit.raw.mockResolvedValue("");
+
+            await git.removeWorktree("/path/to/worktree", true);
+
+            expect(mockGit.raw).toHaveBeenCalledWith(["worktree", "remove", "--force", "/path/to/worktree"]);
+        });
+
+        it("should throw GitError when removal fails", async() => {
+            mockGit.raw.mockRejectedValue(new Error("Worktree is dirty"));
+
+            await expect(git.removeWorktree("/path/to/worktree"))
+                .rejects.toThrow(GitError);
+            await expect(git.removeWorktree("/path/to/worktree"))
+                .rejects.toThrow("Failed to remove worktree");
+        });
+    });
+
     describe("createGit", () => {
         it("should create Git instance with default directory", () => {
             const gitInstance = createGit();
@@ -360,6 +547,67 @@ bare
 
             expect(gitInstance).toBeInstanceOf(Git);
             expect(simpleGit).toHaveBeenCalledWith("/custom/path");
+        });
+    });
+
+    describe("Git merge methods", () => {
+        it("should get current branch", async() => {
+            const git = new Git("/test");
+            mockGit.raw.mockResolvedValue("feature1\n");
+
+            const branch = await git.getCurrentBranch();
+            expect(branch).toBe("feature1");
+            expect(mockGit.raw).toHaveBeenCalledWith(["rev-parse", "--abbrev-ref", "HEAD"]);
+        });
+
+        it("should detect merge conflicts", async() => {
+            const git = new Git("/test");
+            mockGit.raw.mockResolvedValue("file1.txt\nfile2.txt\n");
+
+            const hasConflicts = await git.hasMergeConflicts();
+            expect(hasConflicts).toBe(true);
+        });
+
+        it("should return false when no merge conflicts", async() => {
+            const git = new Git("/test");
+            mockGit.raw.mockResolvedValue("");
+
+            const hasConflicts = await git.hasMergeConflicts();
+            expect(hasConflicts).toBe(false);
+        });
+
+        it("should get conflicted files", async() => {
+            const git = new Git("/test");
+            mockGit.raw.mockResolvedValue("src/file1.ts\nsrc/file2.ts\n");
+
+            const conflicts = await git.getConflictedFiles();
+            expect(conflicts).toEqual(["src/file1.ts", "src/file2.ts"]);
+        });
+
+        it("should perform successful merge", async() => {
+            const git = new Git("/test");
+            mockGit.raw.mockResolvedValue("");
+
+            const result = await git.merge("feature1");
+            expect(result).toEqual({success: true, conflicts: false});
+            expect(mockGit.raw).toHaveBeenCalledWith(["merge", "--no-ff", "feature1"]);
+        });
+
+        it("should handle merge conflicts", async() => {
+            const git = new Git("/test");
+            mockGit.raw.mockRejectedValueOnce(new Error("merge conflict"));
+            mockGit.raw.mockResolvedValueOnce("conflict.txt\n");
+
+            const result = await git.merge("feature1", "Merge feature1");
+            expect(result).toEqual({success: false, conflicts: true});
+        });
+
+        it("should fetch all remotes", async() => {
+            const git = new Git("/test");
+            mockGit.raw.mockResolvedValue("");
+
+            await git.fetch();
+            expect(mockGit.raw).toHaveBeenCalledWith(["fetch", "--all"]);
         });
     });
 });
