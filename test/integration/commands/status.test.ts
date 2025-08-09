@@ -27,7 +27,6 @@ describe("Status Command Integration Tests", () => {
             await withTestSandbox(async(sandbox) => {
                 // Create git repo with commit
                 const git = await createIsolatedTestRepoWithCommit(sandbox);
-                const repo = simpleGit(git.path);
 
                 // Initialize wtt
                 process.chdir(git.path);
@@ -60,7 +59,6 @@ describe("Status Command Integration Tests", () => {
             await withTestSandbox(async(sandbox) => {
                 // Create git repo with commit
                 const git = await createIsolatedTestRepoWithCommit(sandbox);
-                const repo = simpleGit(git.path);
 
                 // Initialize wtt
                 process.chdir(git.path);
@@ -103,7 +101,6 @@ describe("Status Command Integration Tests", () => {
             await withTestSandbox(async(sandbox) => {
                 // Create git repo with commit
                 const git = await createIsolatedTestRepoWithCommit(sandbox);
-                const repo = simpleGit(git.path);
 
                 // Initialize wtt
                 process.chdir(git.path);
@@ -141,7 +138,6 @@ describe("Status Command Integration Tests", () => {
             await withTestSandbox(async(sandbox) => {
                 // Create git repo with commit
                 const git = await createIsolatedTestRepoWithCommit(sandbox);
-                const repo = simpleGit(git.path);
 
                 // Initialize wtt
                 process.chdir(git.path);
@@ -183,7 +179,6 @@ describe("Status Command Integration Tests", () => {
             await withTestSandbox(async(sandbox) => {
                 // Create git repo with commit
                 const git = await createIsolatedTestRepoWithCommit(sandbox);
-                const repo = simpleGit(git.path);
 
                 // Initialize wtt
                 process.chdir(git.path);
@@ -238,7 +233,6 @@ describe("Status Command Integration Tests", () => {
             await withTestSandbox(async(sandbox) => {
                 // Create git repo with commit
                 const git = await createIsolatedTestRepoWithCommit(sandbox);
-                const repo = simpleGit(git.path);
 
                 // Initialize wtt
                 process.chdir(git.path);
@@ -314,7 +308,6 @@ describe("Status Command Integration Tests", () => {
             await withTestSandbox(async(sandbox) => {
                 // Create git repo with commit
                 const git = await createIsolatedTestRepoWithCommit(sandbox);
-                const repo = simpleGit(git.path);
 
                 // Initialize wtt
                 process.chdir(git.path);
@@ -346,7 +339,6 @@ describe("Status Command Integration Tests", () => {
             await withTestSandbox(async(sandbox) => {
                 // Create git repo with commit
                 const git = await createIsolatedTestRepoWithCommit(sandbox);
-                const repo = simpleGit(git.path);
 
                 // Initialize wtt
                 process.chdir(git.path);

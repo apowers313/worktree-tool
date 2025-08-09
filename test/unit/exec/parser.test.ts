@@ -17,6 +17,7 @@ describe("parseExecCommand", () => {
                 command: "npm run build",
                 args: [],
                 mode: "window",
+                commandName: "build",
             });
         });
 
@@ -31,6 +32,7 @@ describe("parseExecCommand", () => {
                 command: "npm test",
                 args: ["--watch", "--coverage"],
                 mode: "window",
+                commandName: "test",
             });
         });
 
@@ -47,6 +49,7 @@ describe("parseExecCommand", () => {
                 command: "npm test",
                 args: [],
                 mode: "exit",
+                commandName: "test",
             });
         });
 
@@ -63,6 +66,7 @@ describe("parseExecCommand", () => {
                 command: "npm run build",
                 args: [],
                 mode: "window",
+                commandName: "build",
             });
         });
 

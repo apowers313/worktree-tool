@@ -6,7 +6,8 @@ import {createGit} from "../core/git.js";
 import {WorktreeConfig, WorktreeInfo} from "../core/types.js";
 import {ExecutionContext} from "../exec/modes/base.js";
 import {createExecutionMode} from "../exec/modes/factory.js";
-import {ExecOptions, parseExecCommand} from "../exec/parser.js";
+import {parseExecCommand} from "../exec/parser.js";
+import {RefreshManager} from "../exec/refresh-manager.js";
 import {
     attachToTmuxSession,
     canAttachToTmux,
@@ -17,11 +18,15 @@ import {
 import {getErrorMessage, handleCommandError} from "../utils/error-handler.js";
 import {WorktreeToolError} from "../utils/errors.js";
 import {getProjectRoot} from "../utils/find-root.js";
-import {getLogger, Logger} from "../utils/logger.js";
+import {getLogger} from "../utils/logger.js";
+import {portManager} from "../utils/port-manager.js";
 
 interface ExecOptions {
     verbose?: boolean;
     quiet?: boolean;
+    worktrees?: string;
+    mode?: "window" | "inline" | "background" | "exit";
+    refresh?: boolean;
 }
 
 export const execCommand = new Command("exec")
@@ -33,6 +38,7 @@ export const execCommand = new Command("exec")
         new Option("--mode <mode>", "Execution mode")
             .choices(["window", "inline", "background", "exit"]),
     )
+    .option("--refresh", "Ensure autoRun commands are running and re-sort windows")
     .option("-v, --verbose", "Show verbose output")
     .option("-q, --quiet", "Suppress output")
     .allowUnknownOption()
@@ -52,9 +58,9 @@ export const execCommand = new Command("exec")
 
             // Check if -- was used in the original command line after 'exec'
             // Commander.js strips -- but we need to know if it was there
-            const execIndex = process.argv.indexOf('exec');
-            const hasDoubleDashAfterExec = execIndex >= 0 && 
-                process.argv.slice(execIndex + 1).includes('--');
+            const execIndex = process.argv.indexOf("exec");
+            const hasDoubleDashAfterExec = execIndex >= 0 &&
+                process.argv.slice(execIndex + 1).includes("--");
 
             // Build the args array for the parser
             let allArgs: string[];
@@ -67,9 +73,7 @@ export const execCommand = new Command("exec")
                 allArgs = args;
             }
 
-            const parsedCommand = parseExecCommand(allArgs, config, options);
-
-            // Get project root and worktrees
+            // Get project root and worktrees first
             const projectRoot = await getProjectRoot();
             const git = createGit(projectRoot);
             const allWorktrees = await git.listWorktrees();
@@ -82,6 +86,28 @@ export const execCommand = new Command("exec")
                 logger.info("No worktrees found. Create worktrees with 'wtt create <branch-name>'");
                 return;
             }
+
+            // Handle refresh option
+            if (options.refresh) {
+                const refreshManager = new RefreshManager(config, logger);
+
+                // If specific worktrees provided via args, use those
+                let refreshTargets = worktrees;
+                if (commandName || args.length > 0) {
+                    // Parse worktree names from command/args
+                    const requestedNames = [commandName, ... args].filter(Boolean);
+                    refreshTargets = worktrees.filter((w) =>
+                        requestedNames.includes(path.basename(w.path)) ||
+                        requestedNames.includes(w.branch),
+                    );
+                }
+
+                await refreshManager.refreshWorktrees(refreshTargets);
+                return; // Exit after refresh
+            }
+
+            // Parse command only if not refreshing
+            const parsedCommand = parseExecCommand(allArgs, config, options);
 
             // Filter to specific worktrees if requested
             let targetWorktrees = worktrees;
@@ -120,6 +146,32 @@ export const execCommand = new Command("exec")
                 args: parsedCommand.args,
                 env: {},
             }));
+
+            // Allocate ports if configured
+            if (config.availablePorts && parsedCommand.commandName) {
+                const portRange = portManager.parseRange(config.availablePorts);
+
+                for (const context of contexts) {
+                    const cmdConfig = config.commands?.[parsedCommand.commandName];
+                    if (cmdConfig && typeof cmdConfig === "object" && cmdConfig.numPorts && cmdConfig.numPorts > 0) {
+                        try {
+                            const ports = await portManager.findAvailablePorts(
+                                portRange.start,
+                                portRange.end,
+                                cmdConfig.numPorts,
+                            );
+
+                            context.ports = ports;
+                            // Set environment variables
+                            ports.forEach((port, index) => {
+                                context.env[`WTT_PORT${String(index + 1)}`] = port.toString();
+                            });
+                        } catch(error) {
+                            logger.warn(`Port allocation failed for ${context.worktreeName}: ${getErrorMessage(error)}`);
+                        }
+                    }
+                }
+            }
 
             // Execute using the appropriate mode
             const executionMode = createExecutionMode(parsedCommand.mode, config, logger);

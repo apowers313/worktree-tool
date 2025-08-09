@@ -6,6 +6,7 @@ export interface ExecutionContext {
     command: string;
     args: string[];
     env: Record<string, string>;
+    ports?: number[];
 }
 
 export abstract class ExecutionMode {

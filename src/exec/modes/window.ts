@@ -8,6 +8,7 @@ import {
     sanitizeTmuxWindowName,
     tmuxSessionExists,
 } from "../../platform/tmux.js";
+import {tmuxWindowManager} from "../../platform/tmux-window-manager.js";
 import {getErrorMessage} from "../../utils/error-handler.js";
 import {getLogger} from "../../utils/logger.js";
 import {ExecutionContext, ExecutionMode} from "./base.js";
@@ -55,6 +56,15 @@ export class WindowMode extends ExecutionMode {
 
         if (failureCount > 0) {
             throw new Error(`${String(failureCount)} command(s) failed to start`);
+        }
+
+        // Sort windows alphabetically if autoSort is enabled and tmux is being used
+        if (this.config.autoSort && this.config.tmux && hasTmux) {
+            try {
+                await tmuxWindowManager.sortWindowsAlphabetically(sessionName);
+            } catch(error) {
+                this.logger.warn(`Failed to sort windows: ${getErrorMessage(error)}`);
+            }
         }
     }
 

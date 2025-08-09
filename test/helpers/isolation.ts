@@ -108,6 +108,7 @@ export function execSyncWithoutTmux(command: string, options?: ExecSyncOptions):
     };
 
     return execSync(command, {
+        encoding: "utf8",
         ... options,
         env,
     });

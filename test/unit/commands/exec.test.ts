@@ -3,8 +3,10 @@ import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import * as config from "../../../src/core/config";
 import * as git from "../../../src/core/git";
 import {WorktreeConfig, WorktreeInfo} from "../../../src/core/types";
+import * as RefreshManagerModule from "../../../src/exec/refresh-manager";
 import {ShellManager} from "../../../src/platform/shell";
 import * as tmux from "../../../src/platform/tmux";
+import * as findRoot from "../../../src/utils/find-root";
 import * as logger from "../../../src/utils/logger";
 
 vi.mock("../../../src/core/config");
@@ -12,12 +14,16 @@ vi.mock("../../../src/core/git");
 vi.mock("../../../src/platform/tmux");
 vi.mock("../../../src/platform/shell");
 vi.mock("../../../src/utils/logger");
+vi.mock("../../../src/utils/find-root");
+vi.mock("../../../src/utils/port-manager");
+vi.mock("../../../src/exec/refresh-manager");
 
 // Global mocks
 let mockLogger: any;
 let mockGit: any;
 let mockShellManager: any;
 let processExitMock: any;
+let mockRefreshManager: any;
 
 describe("exec command", () => {
     beforeEach(() => {
@@ -34,12 +40,14 @@ describe("exec command", () => {
             error: vi.fn(),
             info: vi.fn(),
             success: vi.fn(),
+            warn: vi.fn(),
+            verbose: vi.fn(),
         };
         vi.mocked(logger.getLogger).mockReturnValue(mockLogger);
 
         // Mock Git
         mockGit = {
-            listWorktrees: vi.fn(),
+            listWorktrees: vi.fn().mockResolvedValue([]),
         };
         vi.mocked(git.createGit).mockReturnValue(mockGit);
 
@@ -60,6 +68,15 @@ describe("exec command", () => {
             executeInNewWindow: vi.fn(),
         };
         vi.mocked(ShellManager).mockImplementation(() => mockShellManager);
+
+        // Mock RefreshManager
+        mockRefreshManager = {
+            refreshWorktrees: vi.fn().mockResolvedValue(undefined),
+        };
+        vi.mocked(RefreshManagerModule.RefreshManager).mockImplementation(() => mockRefreshManager);
+
+        // Mock getProjectRoot
+        vi.mocked(findRoot.getProjectRoot).mockResolvedValue("/project");
     });
 
     afterEach(() => {
@@ -85,6 +102,11 @@ describe("exec command", () => {
                 tmux: true,
             } as WorktreeConfig);
 
+            mockGit.listWorktrees.mockResolvedValue([
+                {path: "/project", branch: "main", commit: "abc", isMain: true, isLocked: false},
+                {path: "/project/.worktrees/feature", branch: "feature", commit: "def", isMain: false, isLocked: false},
+            ] as WorktreeInfo[]);
+
             const result = await runCommand(["test"]);
 
             expect(result.code).toBe(1);
@@ -100,6 +122,11 @@ describe("exec command", () => {
                 tmux: true,
                 commands: {},
             } as WorktreeConfig);
+
+            mockGit.listWorktrees.mockResolvedValue([
+                {path: "/project", branch: "main", commit: "abc", isMain: true, isLocked: false},
+                {path: "/project/.worktrees/feature", branch: "feature", commit: "def", isMain: false, isLocked: false},
+            ] as WorktreeInfo[]);
 
             const result = await runCommand(["test"]);
 
@@ -119,6 +146,11 @@ describe("exec command", () => {
                     build: "npm run build",
                 },
             } as WorktreeConfig);
+
+            mockGit.listWorktrees.mockResolvedValue([
+                {path: "/project", branch: "main", commit: "abc", isMain: true, isLocked: false},
+                {path: "/project/.worktrees/feature", branch: "feature", commit: "def", isMain: false, isLocked: false},
+            ] as WorktreeInfo[]);
 
             const result = await runCommand(["nonexistent"]);
 
@@ -619,42 +651,158 @@ describe("exec command", () => {
 
             // Mock process.argv to simulate edge cases
             const originalArgv = process.argv;
-            
+
             try {
                 // Test case 1: -- appears before exec (should NOT be detected as inline command)
-                process.argv = ['node', 'wtt', '--worktrees=--', 'exec', 'ls'];
-                
+                process.argv = ["node", "wtt", "--worktrees=--", "exec", "ls"];
+
                 // This should fail because 'ls' is not a predefined command
                 const result1 = await runCommand(["ls"]);
                 expect(result1.code).toBe(1);
                 expect(mockLogger.error).toHaveBeenCalledWith(
-                    expect.stringContaining("No commands configured")
+                    expect.stringContaining("No commands configured"),
                 );
-                
+
                 // Clear mocks
                 vi.clearAllMocks();
-                
+
                 // Test case 2: -- appears after exec (should be detected as inline command)
-                process.argv = ['node', 'wtt', 'exec', '--', 'ls'];
-                
+                process.argv = ["node", "wtt", "exec", "--", "ls"];
+
                 // This should succeed because it's recognized as an inline command
                 const result2 = await runCommand(["ls"]);
                 expect(result2.code).toBe(0);
-                
+
                 // The key is that it doesn't throw "No commands configured"
                 expect(mockLogger.error).not.toHaveBeenCalledWith(
-                    expect.stringContaining("No commands configured")
+                    expect.stringContaining("No commands configured"),
                 );
             } finally {
                 process.argv = originalArgv;
             }
         });
     });
+
+    describe.skip("refresh option", () => {
+        it("should instantiate RefreshManager when --refresh is used", async() => {
+            vi.mocked(config.loadConfig).mockResolvedValue({
+                version: "1.0.0",
+                projectName: "test",
+                mainBranch: "main",
+                baseDir: ".worktrees",
+                tmux: true,
+                commands: {
+                    test: "npm test",
+                },
+            } as WorktreeConfig);
+
+            mockGit.listWorktrees.mockResolvedValue([
+                {path: "/project", branch: "main", commit: "abc", isMain: true, isLocked: false},
+                {path: "/project/.worktrees/feature", branch: "feature", commit: "def", isMain: false, isLocked: false},
+            ] as WorktreeInfo[]);
+
+            await runCommand(["--refresh"]);
+
+            expect(RefreshManagerModule.RefreshManager).toHaveBeenCalled();
+            expect(mockRefreshManager.refreshWorktrees).toHaveBeenCalled();
+        });
+
+        it("should refresh all worktrees when --refresh is used", async() => {
+            vi.mocked(config.loadConfig).mockResolvedValue({
+                version: "1.0.0",
+                projectName: "test",
+                mainBranch: "main",
+                baseDir: ".worktrees",
+                tmux: true,
+                autoSort: true,
+                commands: {
+                    dev: {
+                        command: "npm run dev",
+                        autoRun: true,
+                    },
+                },
+            } as WorktreeConfig);
+
+            const worktrees = [
+                {path: "/project", branch: "main", commit: "abc", isMain: true, isLocked: false},
+                {path: "/project/.worktrees/feature-1", branch: "feature-1", commit: "def", isMain: false, isLocked: false},
+                {path: "/project/.worktrees/feature-2", branch: "feature-2", commit: "ghi", isMain: false, isLocked: false},
+            ] as WorktreeInfo[];
+            mockGit.listWorktrees.mockResolvedValue(worktrees);
+
+            await runCommand(["--refresh"]);
+
+            // The refresh functionality should have been called
+            expect(mockRefreshManager.refreshWorktrees).toHaveBeenCalled();
+            const callArgs = mockRefreshManager.refreshWorktrees.mock.calls[0][0];
+            expect(callArgs).toHaveLength(2);
+            expect(callArgs[0].branch).toBe("feature-1");
+            expect(callArgs[1].branch).toBe("feature-2");
+        });
+
+        it("should refresh specific worktrees when provided with --refresh", async() => {
+            vi.mocked(config.loadConfig).mockResolvedValue({
+                version: "1.0.0",
+                projectName: "test",
+                mainBranch: "main",
+                baseDir: ".worktrees",
+                tmux: true,
+                commands: {
+                    monitor: {
+                        command: "npm run monitor",
+                        autoRun: true,
+                    },
+                },
+            } as WorktreeConfig);
+
+            const worktrees = [
+                {path: "/project", branch: "main", commit: "abc", isMain: true, isLocked: false},
+                {path: "/project/.worktrees/feature-1", branch: "feature-1", commit: "def", isMain: false, isLocked: false},
+                {path: "/project/.worktrees/feature-2", branch: "feature-2", commit: "ghi", isMain: false, isLocked: false},
+                {path: "/project/.worktrees/feature-3", branch: "feature-3", commit: "jkl", isMain: false, isLocked: false},
+                {path: "/project/.worktrees/feature-4", branch: "feature-4", commit: "mno", isMain: false, isLocked: false},
+            ] as WorktreeInfo[];
+            mockGit.listWorktrees.mockResolvedValue(worktrees);
+
+            await runCommand(["feature-1", "feature-3", "--refresh"]);
+
+            expect(mockRefreshManager.refreshWorktrees).toHaveBeenCalledWith([
+                worktrees[1], // feature-1
+                worktrees[3], // feature-3
+            ]);
+        });
+
+        it("should not execute normal commands when --refresh is used", async() => {
+            vi.mocked(config.loadConfig).mockResolvedValue({
+                version: "1.0.0",
+                projectName: "test",
+                mainBranch: "main",
+                baseDir: ".worktrees",
+                tmux: true,
+                commands: {
+                    test: "npm test",
+                },
+            } as WorktreeConfig);
+
+            mockGit.listWorktrees.mockResolvedValue([
+                {path: "/project", branch: "main", commit: "abc", isMain: true, isLocked: false},
+                {path: "/project/.worktrees/feature", branch: "feature", commit: "def", isMain: false, isLocked: false},
+            ] as WorktreeInfo[]);
+
+            await runCommand(["test", "--refresh"]);
+
+            // Should call refresh manager
+            expect(mockRefreshManager.refreshWorktrees).toHaveBeenCalled();
+
+            // Should NOT execute the normal test command
+            expect(tmux.createTmuxWindowWithCommand).not.toHaveBeenCalled();
+        });
+    });
 });
 
 // Helper function to run the command
 async function runCommand(args: string[]): Promise<{code: number}> {
-    const {execCommand} = await import("../../../src/commands/exec");
+    const {execCommand} = await import("../../../src/commands/exec.js");
 
     try {
         await execCommand.parseAsync(["node", "wtt", ... args]);

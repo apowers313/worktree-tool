@@ -6,6 +6,7 @@ export interface ParsedCommand {
     command: string;
     args: string[];
     mode: "window" | "inline" | "background" | "exit";
+    commandName?: string; // For predefined commands
 }
 
 export interface ExecOptions {
@@ -59,6 +60,7 @@ export function parseExecCommand(
                 command: commandConfig,
                 args: args.slice(1),
                 mode: options.mode ?? "window",
+                commandName: commandName,
             };
         }
 
@@ -67,6 +69,7 @@ export function parseExecCommand(
             command: commandConfig.command,
             args: args.slice(1),
             mode: options.mode ?? commandConfig.mode ?? "window",
+            commandName: commandName,
         };
     }
 

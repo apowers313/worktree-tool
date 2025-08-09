@@ -13,6 +13,10 @@ A command-line tool for managing Git worktrees with integrated tmux/shell sessio
 - 📁 Organized worktree structure in `.worktrees/` directory
 - 🔧 Simple configuration management
 - 🌍 Cross-platform support (Linux, macOS, Windows)
+- 🔄 Auto-run commands on worktree creation
+- 🔌 Automatic port allocation for development servers
+- 📊 Execute commands across multiple worktrees
+- 🔤 Automatic tmux window sorting
 
 ## Installation
 
@@ -79,6 +83,32 @@ wtt create feature-login
 wtt create "fix user authentication"  # Spaces are automatically converted to hyphens
 ```
 
+### `wtt exec [command]`
+
+Execute a command in all (or specified) worktrees.
+
+**Options:**
+- `-w, --worktrees <worktrees>` - Comma-separated list of worktree names
+- `--mode <mode>` - Execution mode: `window`, `inline`, `background`, or `exit`
+- `--refresh` - Ensure autoRun commands are running and re-sort windows
+- `-v, --verbose` - Show verbose output
+- `-q, --quiet` - Suppress output
+
+**Example:**
+```bash
+# Execute predefined command in all worktrees
+wtt exec dev
+
+# Execute command in specific worktrees
+wtt exec build -w feature-a,feature-b
+
+# Execute inline command
+wtt exec -- npm test
+
+# Refresh autoRun commands
+wtt exec --refresh
+```
+
 ### `wtt help [command]`
 
 Display help information.
@@ -91,7 +121,7 @@ wtt help init
 
 ## Configuration
 
-wtt stores its configuration in `.worktree-config.json` at the repository root:
+wtt stores its configuration in `.worktreerc.json` at the repository root:
 
 ```json
 {
@@ -99,9 +129,53 @@ wtt stores its configuration in `.worktree-config.json` at the repository root:
   "projectName": "my-project",
   "mainBranch": "main",
   "baseDir": ".worktrees",
-  "tmux": true
+  "tmux": true,
+  "autoSort": true,
+  "availablePorts": "9000-9099",
+  "commands": {
+    "dev": {
+      "command": "npm run dev",
+      "mode": "window",
+      "autoRun": true,
+      "numPorts": 1
+    },
+    "test": "npm test"
+  }
 }
 ```
+
+### Configuration Options
+
+- `autoSort` (boolean) - Automatically sort tmux windows alphabetically (default: true)
+- `availablePorts` (string) - Port range for automatic port allocation (e.g., "9000-9099")
+- `commands` (object) - Predefined commands for use with `wtt exec`
+
+### Command Configuration
+
+Commands can be defined as either:
+- A simple string: `"test": "npm test"`
+- An object with options:
+  - `command` (string) - The command to execute
+  - `mode` (string) - Execution mode: `window`, `inline`, `background`, or `exit`
+  - `autoRun` (boolean) - Run automatically when creating new worktrees
+  - `numPorts` (number) - Number of ports to allocate (sets `WTT_PORT1`, `WTT_PORT2`, etc.)
+
+### Port Allocation
+
+When `availablePorts` is configured and a command has `numPorts` set, wtt will:
+1. Find available ports in the specified range
+2. Set environment variables `WTT_PORT1`, `WTT_PORT2`, etc.
+3. Pass these to the executed command
+
+This is useful for running development servers on different ports in each worktree.
+
+### Auto-Run Commands
+
+Commands with `autoRun: true` will automatically execute when:
+1. A new worktree is created with `wtt create`
+2. You run `wtt exec --refresh` to restart any stopped commands
+
+This is perfect for starting development servers, watchers, or other long-running processes.
 
 ## Requirements
 

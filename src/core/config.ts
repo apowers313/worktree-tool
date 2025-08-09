@@ -69,10 +69,9 @@ export async function loadConfig(): Promise<WorktreeConfig | null> {
  */
 export async function saveConfig(config: WorktreeConfig): Promise<void> {
     try {
-        const projectRoot = await findProjectRoot();
-        if (!projectRoot) {
-            throw new ConfigError("Not in a worktree project");
-        }
+        // During init, there's no existing config, so save in current directory
+        // Otherwise, find the project root
+        const projectRoot = await findProjectRoot() ?? process.cwd();
 
         const configPath = path.join(projectRoot, CONFIG_FILENAME);
         const content = JSON.stringify(config, null, 2);
@@ -102,6 +101,23 @@ export function getDefaultConfig(projectName: string): WorktreeConfig {
         tmux: true,
         commands: {},
     };
+}
+
+/**
+ * Validate port range format
+ * @param range The port range string to validate
+ * @returns True if valid, false otherwise
+ */
+function validatePortRange(range: string): boolean {
+    const regex = /^(\d+)-(\d+)$/;
+    const match = regex.exec(range);
+    if (!match?.[1] || !match[2]) {
+        return false;
+    }
+
+    const start = parseInt(match[1]);
+    const end = parseInt(match[2]);
+    return start < end && start >= 1024 && end <= 65535;
 }
 
 /**
@@ -137,6 +153,18 @@ export function validateConfig(config: unknown): config is WorktreeConfig {
         return false;
     }
 
+    // Validate optional autoSort field
+    if (obj.autoSort !== undefined && typeof obj.autoSort !== "boolean") {
+        return false;
+    }
+
+    // Validate optional availablePorts field
+    if (obj.availablePorts !== undefined) {
+        if (typeof obj.availablePorts !== "string" || !validatePortRange(obj.availablePorts)) {
+            return false;
+        }
+    }
+
     // Validate optional commands field
     if (obj.commands !== undefined) {
         if (typeof obj.commands !== "object" || obj.commands === null || Array.isArray(obj.commands)) {
@@ -163,6 +191,16 @@ export function validateConfig(config: unknown): config is WorktreeConfig {
                     if (!validModes.includes(cmdObj.mode as string)) {
                         return false;
                     }
+                }
+
+                // autoRun property is optional but must be boolean if present
+                if (cmdObj.autoRun !== undefined && typeof cmdObj.autoRun !== "boolean") {
+                    return false;
+                }
+
+                // numPorts property is optional but must be non-negative number if present
+                if (cmdObj.numPorts !== undefined && (typeof cmdObj.numPorts !== "number" || cmdObj.numPorts < 0)) {
+                    return false;
                 }
             } else {
                 // Invalid format

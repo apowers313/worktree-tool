@@ -176,14 +176,18 @@ describe("Init Command", () => {
             // Should detect platform for tmux
             expect(detector.detectPlatform).toHaveBeenCalled();
 
-            // Should save config with empty commands object
+            // Should save config with default values
             expect(config.saveConfig).toHaveBeenCalledWith(
                 expect.objectContaining({
                     projectName: "detected-project",
                     mainBranch: "main",
                     baseDir: ".worktrees",
                     tmux: true,
-                    commands: {},
+                    autoSort: true,
+                    availablePorts: "9000-9099",
+                    commands: {
+                        shell: "bash",
+                    },
                 }),
             );
 
@@ -208,14 +212,18 @@ describe("Init Command", () => {
             // Should not detect main branch
             expect(mockGit.getMainBranch).not.toHaveBeenCalled();
 
-            // Should save config with provided values and empty commands
+            // Should save config with provided values and default commands
             expect(config.saveConfig).toHaveBeenCalledWith(
                 expect.objectContaining({
                     projectName: "custom-project",
                     mainBranch: "master",
                     baseDir: ".wt",
                     tmux: true,
-                    commands: {},
+                    autoSort: true,
+                    availablePorts: "9000-9099",
+                    commands: {
+                        shell: "bash",
+                    },
                 }),
             );
         });
@@ -226,7 +234,11 @@ describe("Init Command", () => {
             expect(config.saveConfig).toHaveBeenCalledWith(
                 expect.objectContaining({
                     tmux: false,
-                    commands: {},
+                    autoSort: true,
+                    availablePorts: "9000-9099",
+                    commands: {
+                        shell: "bash",
+                    },
                 }),
             );
         });
@@ -243,7 +255,11 @@ describe("Init Command", () => {
             expect(config.saveConfig).toHaveBeenCalledWith(
                 expect.objectContaining({
                     tmux: false,
-                    commands: {},
+                    autoSort: true,
+                    availablePorts: "9000-9099",
+                    commands: {
+                        shell: "bash",
+                    },
                 }),
             );
         });
@@ -315,13 +331,13 @@ describe("Init Command", () => {
             expect(mockLogger.success).toHaveBeenCalledWith("Initialized worktree project. Config: .worktree-config.json");
         });
 
-        it("should include empty commands object in saved config", async() => {
+        it("should include default commands in saved config", async() => {
             await executeInit({});
 
-            // Verify the saved config includes an empty commands object
+            // Verify the saved config includes default commands
             const savedConfig = vi.mocked(config.saveConfig).mock.calls[0][0];
             expect(savedConfig).toHaveProperty("commands");
-            expect(savedConfig.commands).toEqual({});
+            expect(savedConfig.commands).toEqual({shell: "bash"});
         });
     });
 

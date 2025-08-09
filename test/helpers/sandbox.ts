@@ -42,6 +42,10 @@ export class TestSandbox {
         await fs.mkdir(workspace, {recursive: true});
         await fs.mkdir(gnupgHome, {recursive: true});
 
+        // Create boundary marker to prevent findProjectRoot from searching up
+        const boundaryPath = path.join(this.tempDir, ".wtt-search-boundary");
+        await fs.writeFile(boundaryPath, "");
+
         // Create empty git credentials file
         const credentialsPath = path.join(this.tempDir, "git-credentials");
         await fs.writeFile(credentialsPath, "");

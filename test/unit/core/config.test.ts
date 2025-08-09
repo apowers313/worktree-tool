@@ -10,6 +10,7 @@ import {
     validateConfig} from "../../../src/core/config";
 import {WorktreeConfig} from "../../../src/core/types";
 import {ConfigError, FileSystemError} from "../../../src/utils/errors";
+import {findProjectRoot} from "../../../src/utils/find-root";
 
 // Mock fs module
 vi.mock("fs", () => ({
@@ -20,13 +21,21 @@ vi.mock("fs", () => ({
     },
 }));
 
+// Mock find-root module
+vi.mock("../../../src/utils/find-root", () => ({
+    findProjectRoot: vi.fn(),
+}));
+
 describe("Config Management", () => {
     const mockFs = fs as any;
+    const mockFindProjectRoot = vi.mocked(findProjectRoot);
     const originalCwd = process.cwd();
 
     beforeEach(() => {
         vi.clearAllMocks();
         vi.spyOn(process, "cwd").mockReturnValue("/test/project");
+        // Default mock - project root is current directory
+        mockFindProjectRoot.mockResolvedValue("/test/project");
     });
 
     afterEach(() => {
@@ -52,6 +61,14 @@ describe("Config Management", () => {
                 path.join("/test/project", ".worktree-config.json"),
                 "utf-8",
             );
+        });
+
+        it("should return null when no project root found", async() => {
+            mockFindProjectRoot.mockResolvedValue(null);
+
+            const result = await loadConfig();
+
+            expect(result).toBeNull();
         });
 
         it("should return null when config file does not exist", async() => {
@@ -223,6 +240,27 @@ describe("Config Management", () => {
                 tmux: false,
             };
 
+            mockFs.writeFile.mockResolvedValue();
+
+            await saveConfig(config);
+
+            expect(mockFs.writeFile).toHaveBeenCalledWith(
+                path.join("/test/project", ".worktree-config.json"),
+                JSON.stringify(config, null, 2),
+                "utf-8",
+            );
+        });
+
+        it("should use current directory when no project root found", async() => {
+            const config: WorktreeConfig = {
+                version: "1.0.0",
+                projectName: "test-project",
+                mainBranch: "main",
+                baseDir: ".worktrees",
+                tmux: false,
+            };
+
+            mockFindProjectRoot.mockResolvedValue(null);
             mockFs.writeFile.mockResolvedValue();
 
             await saveConfig(config);
@@ -583,6 +621,14 @@ describe("Config Management", () => {
             expect(mockFs.access).toHaveBeenCalledWith(
                 path.join("/test/project", ".worktree-config.json"),
             );
+        });
+
+        it("should return false when no project root found", async() => {
+            mockFindProjectRoot.mockResolvedValue(null);
+
+            const result = await configExists();
+
+            expect(result).toBe(false);
         });
 
         it("should return false when config file does not exist", async() => {

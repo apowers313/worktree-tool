@@ -6,6 +6,7 @@ import {promisify} from "util";
 import {loadConfig} from "../core/config.js";
 import {createGit} from "../core/git.js";
 import {CreateOptions} from "../core/types.js";
+import {AutoRunManager} from "../exec/autorun-manager.js";
 import {detectPlatform} from "../platform/detector.js";
 import {spawnShell} from "../platform/shell.js";
 import {
@@ -19,6 +20,7 @@ import {
     sanitizeTmuxName,
     switchToTmuxWindow,
     tmuxSessionExists} from "../platform/tmux.js";
+import {tmuxWindowManager} from "../platform/tmux-window-manager.js";
 import {getProjectRoot} from "../utils/find-root.js";
 import {getLogger} from "../utils/logger.js";
 
@@ -106,6 +108,27 @@ export async function executeCreate(options: CreateOptions): Promise<void> {
 
         // Show concise success message before launching shell/tmux
         logger.success(`Created worktree: ${sanitizedName}`);
+
+        // Run autoRun commands
+        const autoRunManager = new AutoRunManager(config, logger);
+        const newWorktree = {
+            path: absoluteWorktreePath,
+            branch: sanitizedName,
+            commit: "", // Not needed for autoRun
+            isMain: false,
+            isLocked: false,
+        };
+        await autoRunManager.runAutoCommands(newWorktree);
+
+        // Sort windows if autoSort is enabled and tmux is being used
+        if (config.autoSort && config.tmux && await isTmuxAvailable()) {
+            try {
+                const sessionName = sanitizeTmuxName(config.projectName);
+                await tmuxWindowManager.sortWindowsAlphabetically(sessionName);
+            } catch(error) {
+                logger.warn(`Failed to sort windows: ${getErrorMessage(error)}`);
+            }
+        }
 
         // Handle tmux or shell spawning
         if (config.tmux && await isTmuxAvailable()) {

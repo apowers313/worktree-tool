@@ -10,6 +10,10 @@ export type CommandConfig = string | {
     command: string;
     /** Execution mode for this command */
     mode?: "window" | "inline" | "background" | "exit";
+    /** Whether to automatically run this command after worktree creation */
+    autoRun?: boolean;
+    /** Number of ports to allocate for this command */
+    numPorts?: number;
 };
 
 /**
@@ -26,6 +30,10 @@ export interface WorktreeConfig {
     baseDir: string;
     /** Whether tmux integration is enabled */
     tmux: boolean;
+    /** Whether to automatically sort tmux windows alphabetically */
+    autoSort?: boolean;
+    /** Available port range for commands (format: "start-end") */
+    availablePorts?: string;
     /** User-defined commands to execute in worktrees */
     commands?: Record<string, CommandConfig>;
 }
