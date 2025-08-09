@@ -42,7 +42,7 @@ export function formatWorktreeStatus(status: WorktreeStatus, maxNameLength: numb
         statusParts.push(CONFLICT_COLOR(`${STATUS_SYMBOLS.conflict}${String(status.counts.conflicts)}`));
     } else if (status.hasConflicts) {
         // Potential conflicts (orange)
-        const count = status.potentialConflictCount || 1;
+        const count = status.potentialConflictCount ?? 1;
         statusParts.push(POTENTIAL_CONFLICT_COLOR(`${STATUS_SYMBOLS.conflict}${String(count)}`));
     }
 
