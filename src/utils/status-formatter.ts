@@ -25,7 +25,7 @@ const MIXED_COLOR = chalk.yellow;
 const UNSTAGED_COLOR = chalk.white;
 const UNTRACKED_COLOR = chalk.gray;
 const CONFLICT_COLOR = chalk.red;
-const DEFAULT_COLOR = (text: string) => text;
+const DEFAULT_COLOR = (text: string): string => text;
 
 /**
  * Format a worktree status into a colorful string for display
@@ -42,7 +42,7 @@ export function formatWorktreeStatus(status: WorktreeStatus, maxNameLength: numb
     }
 
     // Check for each file type - determine if staged only, unstaged only, or mixed
-    const fileTypes: Array<{symbol: string; stagedCount: number; unstagedCount: number}> = [
+    const fileTypes: {symbol: string, stagedCount: number, unstagedCount: number}[] = [
         {symbol: STATUS_SYMBOLS.add, stagedCount: status.counts.staged.add, unstagedCount: status.counts.unstaged.add},
         {symbol: STATUS_SYMBOLS.mod, stagedCount: status.counts.staged.mod, unstagedCount: status.counts.unstaged.mod},
         {symbol: STATUS_SYMBOLS.del, stagedCount: status.counts.staged.del, unstagedCount: status.counts.unstaged.del},
@@ -64,6 +64,7 @@ export function formatWorktreeStatus(status: WorktreeStatus, maxNameLength: numb
                 // Only unstaged
                 color = UNSTAGED_COLOR;
             }
+
             statusParts.push(color(`${fileType.symbol}${String(totalCount)}`));
         }
     }

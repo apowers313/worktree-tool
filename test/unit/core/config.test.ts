@@ -110,6 +110,24 @@ describe("Config Management", () => {
                 expect(result).toEqual(config);
             });
 
+            it("should load configuration with autoRemove property", async() => {
+                const config: WorktreeConfig = {
+                    version: "1.0.0",
+                    projectName: "test-project",
+                    mainBranch: "main",
+                    baseDir: ".worktrees",
+                    tmux: true,
+                    autoRemove: true,
+                };
+
+                mockFs.readFile.mockResolvedValue(JSON.stringify(config));
+
+                const result = await loadConfig();
+
+                expect(result).toEqual(config);
+                expect(result.autoRemove).toBe(true);
+            });
+
             it("should throw ConfigError for empty command string", async() => {
                 const config = {
                     version: "1.0.0",
@@ -570,6 +588,41 @@ describe("Config Management", () => {
 
                 expect(validateConfig(config)).toBe(false);
             });
+        });
+
+        it("should accept autoRemove property", () => {
+            const config: WorktreeConfig = {
+                version: "1.0.0",
+                projectName: "test",
+                mainBranch: "main",
+                baseDir: ".worktrees",
+                tmux: false,
+                autoRemove: true,
+            };
+            expect(validateConfig(config)).toBe(true);
+        });
+
+        it("should accept config without autoRemove property", () => {
+            const config: WorktreeConfig = {
+                version: "1.0.0",
+                projectName: "test",
+                mainBranch: "main",
+                baseDir: ".worktrees",
+                tmux: false,
+            };
+            expect(validateConfig(config)).toBe(true);
+        });
+
+        it("should reject non-boolean autoRemove", () => {
+            const config = {
+                version: "1.0.0",
+                projectName: "test",
+                mainBranch: "main",
+                baseDir: ".worktrees",
+                tmux: false,
+                autoRemove: "yes",
+            };
+            expect(validateConfig(config)).toBe(false);
         });
     });
 

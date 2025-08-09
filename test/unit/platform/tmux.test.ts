@@ -1,4 +1,4 @@
-import {execFile, spawn} from "child_process";
+import {execFile} from "child_process";
 
 import {
     canAttachToTmux,

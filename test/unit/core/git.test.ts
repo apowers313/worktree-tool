@@ -549,4 +549,65 @@ bare
             expect(simpleGit).toHaveBeenCalledWith("/custom/path");
         });
     });
+
+    describe("Git merge methods", () => {
+        it("should get current branch", async() => {
+            const git = new Git("/test");
+            mockGit.raw.mockResolvedValue("feature1\n");
+
+            const branch = await git.getCurrentBranch();
+            expect(branch).toBe("feature1");
+            expect(mockGit.raw).toHaveBeenCalledWith(["rev-parse", "--abbrev-ref", "HEAD"]);
+        });
+
+        it("should detect merge conflicts", async() => {
+            const git = new Git("/test");
+            mockGit.raw.mockResolvedValue("file1.txt\nfile2.txt\n");
+
+            const hasConflicts = await git.hasMergeConflicts();
+            expect(hasConflicts).toBe(true);
+        });
+
+        it("should return false when no merge conflicts", async() => {
+            const git = new Git("/test");
+            mockGit.raw.mockResolvedValue("");
+
+            const hasConflicts = await git.hasMergeConflicts();
+            expect(hasConflicts).toBe(false);
+        });
+
+        it("should get conflicted files", async() => {
+            const git = new Git("/test");
+            mockGit.raw.mockResolvedValue("src/file1.ts\nsrc/file2.ts\n");
+
+            const conflicts = await git.getConflictedFiles();
+            expect(conflicts).toEqual(["src/file1.ts", "src/file2.ts"]);
+        });
+
+        it("should perform successful merge", async() => {
+            const git = new Git("/test");
+            mockGit.raw.mockResolvedValue("");
+
+            const result = await git.merge("feature1");
+            expect(result).toEqual({success: true, conflicts: false});
+            expect(mockGit.raw).toHaveBeenCalledWith(["merge", "--no-ff", "feature1"]);
+        });
+
+        it("should handle merge conflicts", async() => {
+            const git = new Git("/test");
+            mockGit.raw.mockRejectedValueOnce(new Error("merge conflict"));
+            mockGit.raw.mockResolvedValueOnce("conflict.txt\n");
+
+            const result = await git.merge("feature1", "Merge feature1");
+            expect(result).toEqual({success: false, conflicts: true});
+        });
+
+        it("should fetch all remotes", async() => {
+            const git = new Git("/test");
+            mockGit.raw.mockResolvedValue("");
+
+            await git.fetch();
+            expect(mockGit.raw).toHaveBeenCalledWith(["fetch", "--all"]);
+        });
+    });
 });
