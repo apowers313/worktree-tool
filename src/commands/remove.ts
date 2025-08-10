@@ -1,7 +1,7 @@
 import {Command} from "commander";
 import path from "path";
 
-import {WorktreeInfo} from "../core/types.js";
+import {CommandContext, CommandOptions, WorktreeInfo} from "../core/types.js";
 import {
     changeToMainWorktree,
     isCurrentProcessInWorktree,
@@ -9,7 +9,7 @@ import {
 } from "../platform/process-cleanup.js";
 import {closeTmuxWindowsForWorktree} from "../platform/tmux-cleanup.js";
 import {validateWorktreeName} from "../utils/validation.js";
-import {BaseCommand, CommandContext, CommandOptions} from "./base.js";
+import {BaseCommand} from "./base.js";
 
 export interface RemoveOptions extends CommandOptions {
     worktrees: string[];

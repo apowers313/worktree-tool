@@ -3,6 +3,8 @@ import {existsSync, rmSync} from "fs";
 import path from "path";
 import {afterEach, beforeEach, describe, expect, it} from "vitest";
 
+import {shouldSkipTmuxTest} from "../helpers/integration-helpers.js";
+
 // Path to the compiled wtt binary
 const WTT_BIN = path.resolve(__dirname, "../../dist/index.js");
 
@@ -44,8 +46,8 @@ describe("Tmux Window Switching Integration", () => {
     });
 
     it("should switch to tmux window when creating second worktree", function(context) {
-        // Skip if not in CI or tmux not available, or if tmux is disabled
-        if ((!process.env.CI && !process.env.TMUX) || process.env.DISABLE_TMUX === "true") {
+        // Skip if tmux is not available or disabled
+        if (shouldSkipTmuxTest()) {
             console.log("Skipping tmux window switching test - tmux not available or disabled");
             context.skip();
             return;
@@ -113,7 +115,7 @@ describe("Tmux Window Switching Integration", () => {
             if (error.message?.includes("tmux") ||
                 error.message?.includes("command not found") ||
                 error.message?.includes("no server running") ||
-                (process.env.CI && process.env.DISABLE_TMUX === "true")) {
+                shouldSkipTmuxTest()) {
                 console.log("Skipping test - tmux not available or disabled in CI");
                 context.skip();
                 return;

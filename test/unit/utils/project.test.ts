@@ -5,9 +5,8 @@ import {vi} from "vitest";
 import {
     detectProjectName,
     findPackageJson,
-    isValidGitBranchName,
-    sanitizeGitBranchName,
-    sanitizeProjectName} from "../../../src/utils/project";
+    isValidGitBranchName} from "../../../src/utils/project";
+import {sanitize} from "../../../src/utils/sanitize";
 
 // Mock fs module
 vi.mock("fs", () => ({
@@ -158,52 +157,52 @@ describe("Project Detection", () => {
         });
     });
 
-    describe("sanitizeProjectName", () => {
+    describe("sanitizeProjectName (using generic sanitize)", () => {
         it("should remove npm scope", () => {
-            expect(sanitizeProjectName("@myorg/package")).toBe("package");
-            expect(sanitizeProjectName("@org/name")).toBe("name");
+            expect(sanitize("@myorg/package", "PROJECT_NAME")).toBe("package");
+            expect(sanitize("@org/name", "PROJECT_NAME")).toBe("name");
         });
 
         it("should keep simple names unchanged", () => {
-            expect(sanitizeProjectName("my-project")).toBe("my-project");
-            expect(sanitizeProjectName("project_name")).toBe("project_name");
-            expect(sanitizeProjectName("project123")).toBe("project123");
+            expect(sanitize("my-project", "PROJECT_NAME")).toBe("my-project");
+            expect(sanitize("project_name", "PROJECT_NAME")).toBe("project_name");
+            expect(sanitize("project123", "PROJECT_NAME")).toBe("project123");
         });
 
         it("should replace spaces with hyphens", () => {
-            expect(sanitizeProjectName("my project")).toBe("my-project");
-            expect(sanitizeProjectName("my   project")).toBe("my-project");
+            expect(sanitize("my project", "PROJECT_NAME")).toBe("my-project");
+            expect(sanitize("my   project", "PROJECT_NAME")).toBe("my-project");
         });
 
         it("should replace special characters with hyphens", () => {
-            expect(sanitizeProjectName("my!project")).toBe("my-project");
-            expect(sanitizeProjectName("my@#$project")).toBe("my-project");
-            expect(sanitizeProjectName("my.project")).toBe("my-project");
+            expect(sanitize("my!project", "PROJECT_NAME")).toBe("my-project");
+            expect(sanitize("my@#$project", "PROJECT_NAME")).toBe("my-project");
+            expect(sanitize("my.project", "PROJECT_NAME")).toBe("my-project");
         });
 
         it("should remove leading and trailing hyphens", () => {
-            expect(sanitizeProjectName("-project-")).toBe("project");
-            expect(sanitizeProjectName("---project---")).toBe("project");
+            expect(sanitize("-project-", "PROJECT_NAME")).toBe("project");
+            expect(sanitize("---project---", "PROJECT_NAME")).toBe("project");
         });
 
         it("should replace multiple hyphens with single hyphen", () => {
-            expect(sanitizeProjectName("my---project")).toBe("my-project");
-            expect(sanitizeProjectName("my----awesome----project")).toBe("my-awesome-project");
+            expect(sanitize("my---project", "PROJECT_NAME")).toBe("my-project");
+            expect(sanitize("my----awesome----project", "PROJECT_NAME")).toBe("my-awesome-project");
         });
 
         it("should handle empty or invalid names", () => {
-            expect(sanitizeProjectName("")).toBe("project");
-            expect(sanitizeProjectName("---")).toBe("project");
-            expect(sanitizeProjectName("@#$%")).toBe("project");
+            expect(sanitize("", "PROJECT_NAME")).toBe("project");
+            expect(sanitize("---", "PROJECT_NAME")).toBe("project");
+            expect(sanitize("@#$%", "PROJECT_NAME")).toBe("project");
         });
 
         it("should prefix names starting with numbers", () => {
-            expect(sanitizeProjectName("123project")).toBe("p-123project");
-            expect(sanitizeProjectName("1-my-project")).toBe("p-1-my-project");
+            expect(sanitize("123project", "PROJECT_NAME")).toBe("p-123project");
+            expect(sanitize("1-my-project", "PROJECT_NAME")).toBe("p-1-my-project");
         });
 
         it("should handle scope without slash correctly", () => {
-            expect(sanitizeProjectName("@myorg")).toBe("myorg");
+            expect(sanitize("@myorg", "PROJECT_NAME")).toBe("myorg");
         });
     });
 
@@ -254,58 +253,58 @@ describe("Project Detection", () => {
         });
     });
 
-    describe("sanitizeGitBranchName", () => {
+    describe("sanitizeGitBranchName (using generic sanitize)", () => {
         it("should replace spaces with hyphens", () => {
-            expect(sanitizeGitBranchName("feature branch")).toBe("feature-branch");
-            expect(sanitizeGitBranchName("my awesome feature")).toBe("my-awesome-feature");
+            expect(sanitize("feature branch", "GIT_BRANCH")).toBe("feature-branch");
+            expect(sanitize("my awesome feature", "GIT_BRANCH")).toBe("my-awesome-feature");
         });
 
         it("should remove invalid characters", () => {
-            expect(sanitizeGitBranchName("feature~branch")).toBe("featurebranch");
-            expect(sanitizeGitBranchName("feature^branch")).toBe("featurebranch");
-            expect(sanitizeGitBranchName("feature:branch")).toBe("featurebranch");
-            expect(sanitizeGitBranchName("feature?branch")).toBe("featurebranch");
-            expect(sanitizeGitBranchName("feature*branch")).toBe("featurebranch");
-            expect(sanitizeGitBranchName("feature[branch]")).toBe("featurebranch");
-            expect(sanitizeGitBranchName("feature\\branch")).toBe("featurebranch");
+            expect(sanitize("feature~branch", "GIT_BRANCH")).toBe("featurebranch");
+            expect(sanitize("feature^branch", "GIT_BRANCH")).toBe("featurebranch");
+            expect(sanitize("feature:branch", "GIT_BRANCH")).toBe("featurebranch");
+            expect(sanitize("feature?branch", "GIT_BRANCH")).toBe("featurebranch");
+            expect(sanitize("feature*branch", "GIT_BRANCH")).toBe("featurebranch");
+            expect(sanitize("feature[branch]", "GIT_BRANCH")).toBe("featurebranch");
+            expect(sanitize("feature\\branch", "GIT_BRANCH")).toBe("featurebranch");
         });
 
         it("should remove leading and trailing dots", () => {
-            expect(sanitizeGitBranchName(".feature")).toBe("feature");
-            expect(sanitizeGitBranchName("feature.")).toBe("feature");
-            expect(sanitizeGitBranchName("...feature...")).toBe("feature");
+            expect(sanitize(".feature", "GIT_BRANCH")).toBe("feature");
+            expect(sanitize("feature.", "GIT_BRANCH")).toBe("feature");
+            expect(sanitize("...feature...", "GIT_BRANCH")).toBe("feature");
         });
 
         it("should replace double dots with hyphen", () => {
-            expect(sanitizeGitBranchName("feature..branch")).toBe("feature-branch");
-            expect(sanitizeGitBranchName("a...b")).toBe("a-b");
+            expect(sanitize("feature..branch", "GIT_BRANCH")).toBe("feature-branch");
+            expect(sanitize("a...b", "GIT_BRANCH")).toBe("a-b");
         });
 
         it("should remove .lock suffix", () => {
-            expect(sanitizeGitBranchName("branch.lock")).toBe("branch");
-            expect(sanitizeGitBranchName("feature.lock")).toBe("feature");
+            expect(sanitize("branch.lock", "GIT_BRANCH")).toBe("branch");
+            expect(sanitize("feature.lock", "GIT_BRANCH")).toBe("feature");
         });
 
         it("should handle multiple consecutive hyphens", () => {
-            expect(sanitizeGitBranchName("feature---branch")).toBe("feature-branch");
-            expect(sanitizeGitBranchName("a----b----c")).toBe("a-b-c");
+            expect(sanitize("feature---branch", "GIT_BRANCH")).toBe("feature-branch");
+            expect(sanitize("a----b----c", "GIT_BRANCH")).toBe("a-b-c");
         });
 
         it("should remove leading and trailing hyphens", () => {
-            expect(sanitizeGitBranchName("-feature-")).toBe("feature");
-            expect(sanitizeGitBranchName("---feature---")).toBe("feature");
+            expect(sanitize("-feature-", "GIT_BRANCH")).toBe("feature");
+            expect(sanitize("---feature---", "GIT_BRANCH")).toBe("feature");
         });
 
         it("should handle empty or invalid input", () => {
-            expect(sanitizeGitBranchName("")).toBe("branch");
-            expect(sanitizeGitBranchName("@")).toBe("branch");
-            expect(sanitizeGitBranchName("...")).toBe("branch");
-            expect(sanitizeGitBranchName("---")).toBe("branch");
+            expect(sanitize("", "GIT_BRANCH")).toBe("branch");
+            expect(sanitize("@", "GIT_BRANCH")).toBe("branch");
+            expect(sanitize("...", "GIT_BRANCH")).toBe("branch");
+            expect(sanitize("---", "GIT_BRANCH")).toBe("branch");
         });
 
         it("should handle complex cases", () => {
-            expect(sanitizeGitBranchName("..feature: add new *awesome* feature!")).toBe("feature-add-new-awesome-feature");
-            expect(sanitizeGitBranchName("WIP: [JIRA-123] ~temp branch~")).toBe("WIP-JIRA-123-temp-branch");
+            expect(sanitize("..feature: add new *awesome* feature!", "GIT_BRANCH")).toBe("feature-add-new-awesome-feature");
+            expect(sanitize("WIP: [JIRA-123] ~temp branch~", "GIT_BRANCH")).toBe("WIP-JIRA-123-temp-branch");
         });
     });
 });

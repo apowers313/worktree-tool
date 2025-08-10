@@ -1,4 +1,4 @@
-import {ConflictDetectionResult} from "../../types/conflicts.js";
+import {ConflictDetectionResult} from "../../core/types.js";
 import {getGitVersion, supportsModernMergeTree} from "../../utils/git-version.js";
 import {detectActiveConflicts} from "./active.js";
 import {detectPotentialConflictsLegacy} from "./potential-legacy.js";

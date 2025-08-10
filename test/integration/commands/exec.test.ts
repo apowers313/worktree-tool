@@ -4,6 +4,7 @@ import path from "path";
 import {describe, expect, it} from "vitest";
 
 import {createIsolatedTestRepoWithCommit, withTestSandbox} from "../../helpers/git";
+import {isRunningInCI} from "../../helpers/integration-helpers.js";
 
 // Path to the compiled wtt binary
 const WTT_BIN = path.resolve(__dirname, "../../../dist/index.js");
@@ -76,8 +77,7 @@ describe("exec command integration", () => {
             // In CI, it runs in exit mode and succeeds
             // In local dev with terminal, it may run in window mode
             const output = result.stdout + result.stderr;
-            const isCI = process.env.CI ?? process.env.GITHUB_ACTIONS;
-            if (isCI) {
+            if (isRunningInCI()) {
                 // In CI, expect exit mode execution
                 expect(output).toContain("Executing command in 1 worktree(s) (exit mode)");
             } else {
@@ -115,8 +115,7 @@ describe("exec command integration", () => {
             // In CI, it runs in exit mode and succeeds
             // In local dev with terminal, it may run in window mode
             const output = result.stdout + result.stderr;
-            const isCI = process.env.CI ?? process.env.GITHUB_ACTIONS;
-            if (isCI) {
+            if (isRunningInCI()) {
                 // In CI, expect exit mode execution
                 expect(output).toContain("Executing command in 1 worktree(s) (exit mode)");
             } else {

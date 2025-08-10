@@ -1,22 +1,13 @@
 import {loadConfig} from "../core/config.js";
 import {GIT_ERRORS} from "../core/constants.js";
-import {createGit, Git} from "../core/git.js";
-import {WorktreeConfig} from "../core/types.js";
+import {createGit} from "../core/git.js";
+import {CommandContext, CommandOptions} from "../core/types.js";
 import {handleCommandError} from "../utils/error-handler.js";
 import {ConfigError, GitError} from "../utils/errors.js";
 import {findProjectRoot} from "../utils/find-root.js";
-import {getLogger, Logger} from "../utils/logger.js";
+import {getLogger} from "../utils/logger.js";
 
-export interface CommandContext {
-    logger: Logger;
-    config: WorktreeConfig | null;
-    git: Git;
-}
-
-export interface CommandOptions {
-    verbose?: boolean;
-    quiet?: boolean;
-}
+export type {CommandContext, CommandOptions};
 
 export abstract class BaseCommand<TOptions extends CommandOptions = CommandOptions> {
     protected abstract validateOptions(options: TOptions): void;

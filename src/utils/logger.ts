@@ -2,9 +2,18 @@ import chalk from "chalk";
 
 import {GlobalOptions, LogLevel} from "../core/types.js";
 
+/**
+ * Logger class for handling different levels of output.
+ * Supports quiet, normal, and verbose modes.
+ */
 export class Logger {
     private level: LogLevel;
 
+    /**
+     * Creates a new Logger instance.
+     *
+     * @param options - Global options to determine log level
+     */
     constructor(options?: GlobalOptions) {
         if (options?.quiet) {
             this.level = "quiet";
@@ -107,7 +116,20 @@ export class Logger {
 let instance: Logger;
 
 /**
- * Get or create the logger instance
+ * Get or create the logger instance.
+ * Uses singleton pattern to ensure consistent logging throughout the application.
+ *
+ * @param options - Global options to configure the logger
+ * @returns The Logger instance
+ *
+ * @example
+ * ```typescript
+ * const logger = getLogger({ verbose: true });
+ * logger.info("This is a verbose message");
+ *
+ * const quietLogger = getLogger({ quiet: true });
+ * quietLogger.error("Only errors are shown in quiet mode");
+ * ```
  */
 export function getLogger(options?: GlobalOptions): Logger {
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition

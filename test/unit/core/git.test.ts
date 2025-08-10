@@ -604,10 +604,10 @@ bare
 
         it("should fetch all remotes", async() => {
             const git = new Git("/test");
-            mockGit.raw.mockResolvedValue("");
+            mockGit.fetch = vi.fn().mockResolvedValue(undefined);
 
             await git.fetch();
-            expect(mockGit.raw).toHaveBeenCalledWith(["fetch", "--all"]);
+            expect(mockGit.fetch).toHaveBeenCalled();
         });
     });
 });

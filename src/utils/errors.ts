@@ -88,8 +88,11 @@ export function isWorktreeError(error: unknown): error is WorktreeError {
 
 /**
  * Helper to format error messages for user display
+ * @deprecated Use getErrorMessage from utils/error-handler.ts instead
  */
 export function formatErrorMessage(error: unknown): string {
+    console.warn("formatErrorMessage is deprecated. Use getErrorMessage from utils/error-handler.ts instead.");
+
     if (isWorktreeError(error)) {
         return error.message;
     }

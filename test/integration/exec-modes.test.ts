@@ -4,6 +4,8 @@ import {tmpdir} from "os";
 import path from "path";
 import {afterEach, beforeEach, describe, expect, it} from "vitest";
 
+import {getExpectedDefaultMode, getTestEnvironment} from "../helpers/integration-helpers.js";
+
 describe("Exec Modes Integration", () => {
     let testDir: string;
     let originalCwd: string;
@@ -59,13 +61,11 @@ describe("Exec Modes Integration", () => {
         const wttPath = path.join(__dirname, "..", "..", "dist", "index.js");
         const result = execSync(`node ${wttPath} exec test`, {
             encoding: "utf8",
-            env: {... process.env, WTT_DISABLE_TMUX: "true"},
+            env: getTestEnvironment({WTT_DISABLE_TMUX: "true"}),
         });
 
-        // In CI environments, it defaults to exit mode to avoid terminal emulator issues
-        const isCI = process.env.CI ?? process.env.GITHUB_ACTIONS;
-        const expectedMode = isCI ? "exit" : "window";
-        // Check for the appropriate mode message
+        // Check for the appropriate mode message based on environment
+        const expectedMode = getExpectedDefaultMode();
         if (expectedMode === "exit") {
             expect(result).toContain("Executing command in 1 worktree(s) (exit mode)");
         } else {

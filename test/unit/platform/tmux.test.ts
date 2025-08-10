@@ -66,7 +66,7 @@ describe("Tmux Operations", () => {
         });
 
         it("should handle complex names", () => {
-            expect(sanitizeTmuxName("Feature/Add New Button!")).toBe("featureadd-new-button");
+            expect(sanitizeTmuxName("Feature/Add New Button!")).toBe("feature-add-new-button");
         });
 
         it("should handle multiple spaces", () => {

@@ -1,5 +1,15 @@
 /**
  * Core TypeScript interfaces and types for wtt
+ *
+ * This file contains centralized type definitions for:
+ * - Configuration interfaces (WorktreeConfig, InitOptions, etc.)
+ * - Core data structures (WorktreeInfo, Platform, etc.)
+ * - Command interfaces (CommandContext, CommandOptions, StatusOptions)
+ * - Conflict detection types (ConflictInfo, ConflictDetails, ConflictDetectionResult)
+ * - Global options and utility types
+ *
+ * File-specific types should remain in their respective files when they're only
+ * used within that file or closely related files.
  */
 
 /**
@@ -151,3 +161,48 @@ export interface StatusOptions extends GlobalOptions {
     /** Show detailed file listing */
     verbose?: boolean;
 }
+
+/**
+ * Information about merge conflicts
+ */
+export interface ConflictInfo {
+    type: "active" | "potential";
+    files: string[];
+    count: number;
+    details?: ConflictDetails;
+}
+
+/**
+ * Detailed breakdown of conflict types
+ */
+export interface ConflictDetails {
+    bothModified: number;
+    bothAdded: number;
+    bothDeleted: number;
+    addedByUs: number;
+    addedByThem: number;
+    deletedByUs: number;
+    deletedByThem: number;
+}
+
+/**
+ * Result of conflict detection
+ */
+export interface ConflictDetectionResult {
+    active?: ConflictInfo;
+    potential?: ConflictInfo;
+}
+
+/**
+ * Context passed to all commands
+ */
+export interface CommandContext {
+    logger: import("../utils/logger.js").Logger;
+    config: WorktreeConfig | null;
+    git: import("./git.js").Git;
+}
+
+/**
+ * Base options for all commands (alias for GlobalOptions)
+ */
+export type CommandOptions = GlobalOptions;

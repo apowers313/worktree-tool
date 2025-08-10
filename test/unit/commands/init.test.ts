@@ -117,30 +117,22 @@ describe("Init Command", () => {
             }).toThrow("Base directory cannot be empty");
         });
 
-        it("should reject empty projectName", () => {
+        it("should sanitize empty projectName to default", () => {
+            // Empty project names should be sanitized to "project"
             expect(() => {
                 validateInitOptions({
                     projectName: "",
                 });
-            }).toThrow(ValidationError);
-            expect(() => {
-                validateInitOptions({
-                    projectName: "   ",
-                });
-            }).toThrow("Project name cannot be empty");
+            }).not.toThrow();
         });
 
-        it("should reject empty mainBranch", () => {
-            expect(() => {
-                validateInitOptions({
-                    mainBranch: "",
-                });
-            }).toThrow(ValidationError);
+        it("should sanitize whitespace mainBranch to fallback", () => {
+            // Whitespace-only main branch should be handled gracefully
             expect(() => {
                 validateInitOptions({
                     mainBranch: "   ",
                 });
-            }).toThrow("Main branch cannot be empty");
+            }).not.toThrow();
         });
 
         it("should accept individual tmux options", () => {

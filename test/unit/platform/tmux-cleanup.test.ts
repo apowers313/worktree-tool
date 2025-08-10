@@ -65,7 +65,7 @@ describe("Tmux Cleanup", () => {
         });
 
         it("should sanitize session and window names", async() => {
-            const mockOutput = "featurebranch:@0\n";
+            const mockOutput = "feature-branch:@0\n";
             vi.mocked(execFile).mockImplementation((cmd, args, cb: any) => {
                 cb(null, {stdout: mockOutput, stderr: ""});
             });

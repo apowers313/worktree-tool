@@ -109,7 +109,7 @@ describe("Create Command", () => {
         });
 
         it("should handle complex names", () => {
-            expect(sanitizeWorktreeName("Feature/Add New Button!")).toBe("featureadd-new-button");
+            expect(sanitizeWorktreeName("Feature/Add New Button!")).toBe("feature-add-new-button");
         });
 
         it("should trim whitespace", () => {

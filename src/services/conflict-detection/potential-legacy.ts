@@ -1,6 +1,6 @@
 import simpleGit from "simple-git";
 
-import {ConflictInfo} from "../../types/conflicts.js";
+import {ConflictInfo} from "../../core/types.js";
 
 export async function detectPotentialConflictsLegacy(
     worktreePath: string,

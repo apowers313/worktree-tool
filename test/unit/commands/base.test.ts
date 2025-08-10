@@ -1,9 +1,9 @@
 import {beforeEach, describe, expect, it, Mock, vi} from "vitest";
 
-import {BaseCommand, CommandContext, CommandOptions} from "../../../src/commands/base.js";
+import {BaseCommand} from "../../../src/commands/base.js";
 import {loadConfig} from "../../../src/core/config.js";
 import {createGit} from "../../../src/core/git.js";
-import {WorktreeConfig} from "../../../src/core/types.js";
+import {CommandContext, CommandOptions, WorktreeConfig} from "../../../src/core/types.js";
 import {handleCommandError} from "../../../src/utils/error-handler.js";
 import {ConfigError, GitError} from "../../../src/utils/errors.js";
 import {getLogger} from "../../../src/utils/logger.js";

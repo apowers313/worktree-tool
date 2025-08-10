@@ -1,6 +1,8 @@
 import {promises as fs} from "fs";
 import * as path from "path";
 
+import {sanitize} from "./sanitize.js";
+
 /**
  * Detect the project name from the current directory
  * Tries package.json first, then falls back to directory name
@@ -17,7 +19,7 @@ export async function detectProjectName(dir: string = process.cwd()): Promise<st
             const packageData = JSON.parse(content) as {name?: unknown};
 
             if (packageData.name && typeof packageData.name === "string") {
-                return sanitizeProjectName(packageData.name);
+                return sanitize(packageData.name, "PROJECT_NAME");
             }
         } catch {
             // Ignore errors reading/parsing package.json
@@ -27,7 +29,7 @@ export async function detectProjectName(dir: string = process.cwd()): Promise<st
 
     // Fall back to directory name
     const dirName = path.basename(dir);
-    return sanitizeProjectName(dirName);
+    return sanitize(dirName, "PROJECT_NAME");
 }
 
 /**
@@ -59,37 +61,6 @@ export async function findPackageJson(dir: string): Promise<string | null> {
     }
 
     return null;
-}
-
-/**
- * Sanitize a project name for use with tmux and git
- * @param name The name to sanitize
- * @returns The sanitized name
- */
-export function sanitizeProjectName(name: string): string {
-    // Remove npm scope if present (e.g., @scope/package -> package)
-    if (name.startsWith("@") && name.includes("/")) {
-        name = name.split("/")[1] ?? name;
-    }
-
-    // Custom sanitization - replace invalid chars with hyphens
-    let sanitized = name
-        .replace(/[^a-zA-Z0-9\-_]/g, "-") // Replace invalid chars (including dots) with hyphens
-        .replace(/^-+|-+$/g, "") // Remove leading/trailing hyphens
-        .replace(/-+/g, "-"); // Replace multiple hyphens with single
-
-    // If empty after sanitization, use default
-    if (!sanitized) {
-        return "project";
-    }
-
-    // Ensure it doesn't start with a number (for tmux compatibility)
-    if (/^\d/.test(sanitized)) {
-        sanitized = `p-${sanitized}`;
-    }
-
-    // Return as-is to preserve case (tests expect this)
-    return sanitized;
 }
 
 /**
@@ -132,41 +103,3 @@ export function isValidGitBranchName(name: string): boolean {
     return true;
 }
 
-/**
- * Sanitize a name for use as a git branch
- * @param name The name to sanitize
- * @returns The sanitized branch name
- */
-export function sanitizeGitBranchName(name: string): string {
-    // Replace spaces with hyphens
-    let sanitized = name.replace(/\s+/g, "-");
-
-    // Remove invalid characters
-    // eslint-disable-next-line no-control-regex, no-useless-escape
-    sanitized = sanitized.replace(/[\x00-\x1F\x7F~^:?*\[\]\\!]/g, "");
-
-    // Remove leading dots
-    sanitized = sanitized.replace(/^\.+/, "");
-
-    // Remove trailing dots
-    sanitized = sanitized.replace(/\.+$/, "");
-
-    // Replace '..' with '-'
-    sanitized = sanitized.replace(/\.\.+/g, "-");
-
-    // Remove .lock suffix if present
-    sanitized = sanitized.replace(/\.lock$/, "");
-
-    // Replace multiple consecutive hyphens with single hyphen
-    sanitized = sanitized.replace(/-+/g, "-");
-
-    // Remove leading/trailing hyphens
-    sanitized = sanitized.replace(/^-+|-+$/g, "");
-
-    // If empty after sanitization, use default
-    if (!sanitized || sanitized === "@") {
-        sanitized = "branch";
-    }
-
-    return sanitized;
-}

@@ -24,7 +24,8 @@
   "scripts": {
     "build": "tsc && node scripts/add-shebang.js",
     "dev": "tsx src/index.ts",
-    "test": "vitest run",
+    "test": "npm run test:all",
+    "test:unit": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:integration": "vitest run -c vitest.config.integration.ts",

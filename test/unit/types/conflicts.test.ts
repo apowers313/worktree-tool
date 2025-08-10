@@ -1,4 +1,4 @@
-import {ConflictInfo} from "../../../src/types/conflicts";
+import {ConflictInfo} from "../../../src/core/types";
 
 describe("Conflict Types", () => {
     it("should create valid ConflictInfo objects", () => {

@@ -136,27 +136,48 @@ describe("Error Classes", () => {
         });
     });
 
-    describe("formatErrorMessage", () => {
+    describe("formatErrorMessage (deprecated)", () => {
+        beforeEach(() => {
+            // Suppress deprecation warnings in tests
+            vi.spyOn(console, "warn").mockImplementation(() => {
+                // Intentionally empty to suppress warnings
+            });
+        });
+
         it("should format WorktreeError message", () => {
             const error = new GitError("Git failed");
+            // eslint-disable-next-line @typescript-eslint/no-deprecated
             expect(formatErrorMessage(error)).toBe("Git failed");
         });
 
         it("should format regular Error message", () => {
             const error = new Error("Regular error");
+            // eslint-disable-next-line @typescript-eslint/no-deprecated
             expect(formatErrorMessage(error)).toBe("Regular error");
         });
 
         it("should convert non-Error to string", () => {
+            // eslint-disable-next-line @typescript-eslint/no-deprecated
             expect(formatErrorMessage("String error")).toBe("String error");
+            // eslint-disable-next-line @typescript-eslint/no-deprecated
             expect(formatErrorMessage(123)).toBe("123");
+            // eslint-disable-next-line @typescript-eslint/no-deprecated
             expect(formatErrorMessage(null)).toBe("null");
+            // eslint-disable-next-line @typescript-eslint/no-deprecated
             expect(formatErrorMessage(undefined)).toBe("undefined");
         });
 
         it("should handle objects", () => {
             const obj = {toString: () => "Custom toString"};
+            // eslint-disable-next-line @typescript-eslint/no-deprecated
             expect(formatErrorMessage(obj)).toBe("Custom toString");
+        });
+
+        it("should log deprecation warning", () => {
+            const warnSpy = vi.spyOn(console, "warn");
+            // eslint-disable-next-line @typescript-eslint/no-deprecated
+            formatErrorMessage("test");
+            expect(warnSpy).toHaveBeenCalledWith("formatErrorMessage is deprecated. Use getErrorMessage from utils/error-handler.ts instead.");
         });
     });
 });

@@ -1,6 +1,6 @@
 import simpleGit from "simple-git";
 
-import {ConflictInfo} from "../../types/conflicts.js";
+import {ConflictInfo} from "../../core/types.js";
 
 interface GitError extends Error {
     exitCode?: number;

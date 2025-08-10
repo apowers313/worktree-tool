@@ -350,20 +350,25 @@ export class Git {
     /**
    * Check if a worktree has uncommitted changes
    */
-    async hasUncommittedChanges(worktreePath: string): Promise<boolean> {
+    async hasUncommittedChanges(worktreePath?: string): Promise<boolean> {
         try {
-            const gitInWorktree = new Git(worktreePath);
-            const status = await gitInWorktree.git.raw(["status", "--porcelain"]);
+            if (worktreePath) {
+                const gitInWorktree = new Git(worktreePath);
+                const status = await gitInWorktree.git.raw(["status", "--porcelain"]);
 
-            // Look for modified or deleted files (second character is M or D)
-            return status.split("\n").some((line) => {
-                if (line.length < 2) {
-                    return false;
-                }
+                // Look for modified or deleted files (second character is M or D)
+                return status.split("\n").some((line) => {
+                    if (line.length < 2) {
+                        return false;
+                    }
 
-                const secondChar = line[1];
-                return secondChar === "M" || secondChar === "D";
-            });
+                    const secondChar = line[1];
+                    return secondChar === "M" || secondChar === "D";
+                });
+            }
+
+            const result = await this.git.status();
+            return !result.isClean();
         } catch(error) {
             throw new GitError(`Failed to check uncommitted changes: ${getErrorMessage(error)}`);
         }
@@ -490,6 +495,17 @@ export class Git {
     }
 
     /**
+     * Fetch latest changes from remote
+     */
+    async fetch(): Promise<void> {
+        try {
+            await this.git.fetch();
+        } catch(error) {
+            throw new GitError(`Failed to fetch: ${getErrorMessage(error)}`);
+        }
+    }
+
+    /**
      * Check if a merge resulted in conflicts
      */
     async hasMergeConflicts(): Promise<boolean> {
@@ -532,13 +548,6 @@ export class Git {
 
             throw error;
         }
-    }
-
-    /**
-     * Fetch latest changes
-     */
-    async fetch(): Promise<void> {
-        await this.git.raw(["fetch", "--all"]);
     }
 
     /**

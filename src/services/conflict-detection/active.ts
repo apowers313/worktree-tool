@@ -1,6 +1,6 @@
 import simpleGit from "simple-git";
 
-import {ConflictDetails, ConflictInfo} from "../../types/conflicts.js";
+import {ConflictDetails, ConflictInfo} from "../../core/types.js";
 
 export async function detectActiveConflicts(worktreePath: string): Promise<ConflictInfo | null> {
     try {
