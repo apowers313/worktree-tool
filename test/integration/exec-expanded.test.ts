@@ -150,7 +150,9 @@ describe("Exec Expanded Features", () => {
                 availablePorts: "19100-19199",
                 commands: {
                     api: {
-                        command: "echo $WTT_PORT1 > api-port.log",
+                        command: process.platform === "win32" ?
+                            "echo %WTT_PORT1% > api-port.log" :
+                            "echo $WTT_PORT1 > api-port.log",
                         mode: "inline" as const,
                         autoRun: true,
                         numPorts: 1,

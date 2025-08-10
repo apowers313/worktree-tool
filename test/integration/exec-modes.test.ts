@@ -20,6 +20,8 @@ describe("Exec Modes Integration", () => {
         execSync("git config user.email 'test@example.com'", {stdio: "ignore"});
         execSync("git config user.name 'Test User'", {stdio: "ignore"});
         execSync("git config commit.gpgsign false", {stdio: "ignore"});
+        // Disable any git hooks that might interfere
+        execSync("git config core.hooksPath /dev/null", {stdio: "ignore"});
 
         // Create initial commit
         writeFileSync("README.md", "# Test Project");
