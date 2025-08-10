@@ -1,10 +1,19 @@
-import {describe, expect, it} from "vitest";
+import {beforeEach, describe, expect, it, vi} from "vitest";
 
 import {WorktreeConfig} from "../../../src/core/types";
 import {parseExecCommand} from "../../../src/exec/parser";
+import * as detector from "../../../src/platform/detector";
 import {WorktreeToolError} from "../../../src/utils/errors";
 
+vi.mock("../../../src/platform/detector");
+
 describe("parseExecCommand", () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        // Mock isCI to always return false in tests
+        vi.mocked(detector.isCI).mockReturnValue(false);
+    });
+
     describe("predefined commands", () => {
         it("parses predefined string command", () => {
             const config: Partial<WorktreeConfig> = {

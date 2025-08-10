@@ -4,6 +4,7 @@ import * as config from "../../../src/core/config";
 import * as git from "../../../src/core/git";
 import {WorktreeConfig, WorktreeInfo} from "../../../src/core/types";
 import * as RefreshManagerModule from "../../../src/exec/refresh-manager";
+import * as detector from "../../../src/platform/detector";
 import {ShellManager} from "../../../src/platform/shell";
 import * as tmux from "../../../src/platform/tmux";
 import * as findRoot from "../../../src/utils/find-root";
@@ -11,6 +12,7 @@ import * as logger from "../../../src/utils/logger";
 
 vi.mock("../../../src/core/config");
 vi.mock("../../../src/core/git");
+vi.mock("../../../src/platform/detector");
 vi.mock("../../../src/platform/tmux");
 vi.mock("../../../src/platform/shell");
 vi.mock("../../../src/utils/logger");
@@ -34,6 +36,9 @@ describe("exec command", () => {
         processExitMock = vi.spyOn(process, "exit").mockImplementation((code?: any): never => {
             throw new Error(`Process exited with code ${String(code)}`);
         });
+
+        // Mock detector - always return false for isCI in tests
+        vi.mocked(detector.isCI).mockReturnValue(false);
 
         // Mock logger
         mockLogger = {

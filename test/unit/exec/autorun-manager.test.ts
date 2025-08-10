@@ -3,10 +3,12 @@ import {beforeEach, describe, expect, it, vi} from "vitest";
 import {WorktreeConfig, WorktreeInfo} from "../../../src/core/types.js";
 import {AutoRunManager} from "../../../src/exec/autorun-manager.js";
 import * as modeFactory from "../../../src/exec/modes/factory.js";
+import * as detector from "../../../src/platform/detector.js";
 import {Logger} from "../../../src/utils/logger.js";
 import * as portManager from "../../../src/utils/port-manager.js";
 
 vi.mock("../../../src/exec/modes/factory.js");
+vi.mock("../../../src/platform/detector.js");
 vi.mock("../../../src/utils/port-manager.js");
 
 describe("AutoRunManager", () => {
@@ -50,6 +52,8 @@ describe("AutoRunManager", () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        // Mock isCI to always return false in tests
+        vi.mocked(detector.isCI).mockReturnValue(false);
         vi.mocked(modeFactory.createExecutionMode).mockReturnValue(mockExecutionMode);
     });
 
