@@ -20,13 +20,15 @@ describe("Exec Modes Integration", () => {
         execSync("git config user.email 'test@example.com'", {stdio: "ignore"});
         execSync("git config user.name 'Test User'", {stdio: "ignore"});
         execSync("git config commit.gpgsign false", {stdio: "ignore"});
-        // Disable any git hooks that might interfere
-        execSync("git config core.hooksPath /dev/null", {stdio: "ignore"});
+        // Additional Windows-specific git config
+        if (process.platform === "win32") {
+            execSync("git config core.autocrlf false", {stdio: "ignore"});
+        }
 
         // Create initial commit
         writeFileSync("README.md", "# Test Project");
         execSync("git add .", {stdio: "ignore"});
-        execSync("git commit -m 'Initial commit'", {stdio: "ignore"});
+        execSync('git commit -m "Initial commit"', {stdio: "ignore"});
     });
 
     afterEach(() => {
