@@ -399,7 +399,7 @@ describe("Init Command Integration Tests", () => {
                 // Create nested repo
                 const nestedDir = path.join(parentGit.path, "nested-project");
                 await fs.mkdir(nestedDir, {recursive: true});
-                
+
                 // Create boundary marker to prevent finding parent config
                 await fs.writeFile(path.join(nestedDir, ".wtt-search-boundary"), "");
 
