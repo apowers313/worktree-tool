@@ -29,7 +29,6 @@ function showGeneralHelp(): void {
     console.log("  create       Create a new worktree and open it in a shell or tmux window");
     console.log("  status       Show git status across all worktrees");
     console.log("  exec         Execute a predefined command in one or more worktrees");
-    console.log("  status       Show git status across all worktrees");
     console.log("  remove       Remove git worktrees with safety checks");
     console.log("  merge        Merge worktree changes back to main branch");
     console.log("  help         Display help information");

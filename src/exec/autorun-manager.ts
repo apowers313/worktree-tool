@@ -1,6 +1,7 @@
 import path from "path";
 
 import {CommandConfig, WorktreeConfig, WorktreeInfo} from "../core/types.js";
+import {isCI} from "../platform/detector.js";
 import {getErrorMessage} from "../utils/error-handler.js";
 import {Logger} from "../utils/logger.js";
 import {portManager} from "../utils/port-manager.js";
@@ -59,7 +60,8 @@ export class AutoRunManager {
             }
         }
 
-        const mode = cmdConfig.mode ?? "window";
+        const defaultMode = isCI() ? "exit" : "window";
+        const mode = cmdConfig.mode ?? defaultMode;
         const executionMode = createExecutionMode(mode, this.config, this.logger);
         await executionMode.execute([context]);
     }

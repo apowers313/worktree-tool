@@ -6,7 +6,7 @@ import {createGit} from "../core/git.js";
 import {WorktreeConfig, WorktreeInfo} from "../core/types.js";
 import {ExecutionContext} from "../exec/modes/base.js";
 import {createExecutionMode} from "../exec/modes/factory.js";
-import {parseExecCommand} from "../exec/parser.js";
+import {type ParsedCommand, parseExecCommand} from "../exec/parser.js";
 import {RefreshManager} from "../exec/refresh-manager.js";
 import {
     attachToTmuxSession,
@@ -73,6 +73,12 @@ export const execCommand = new Command("exec")
                 allArgs = args;
             }
 
+            // Parse command early if not refreshing to validate it exists
+            let parsedCommand: ParsedCommand | undefined;
+            if (!options.refresh) {
+                parsedCommand = parseExecCommand(allArgs, config, options);
+            }
+
             // Get project root and worktrees first
             const projectRoot = await getProjectRoot();
             const git = createGit(projectRoot);
@@ -106,8 +112,10 @@ export const execCommand = new Command("exec")
                 return; // Exit after refresh
             }
 
-            // Parse command only if not refreshing
-            const parsedCommand = parseExecCommand(allArgs, config, options);
+            // Parse command was already done above if not refreshing
+            if (!parsedCommand) {
+                throw new Error("Command parsing failed");
+            }
 
             // Filter to specific worktrees if requested
             let targetWorktrees = worktrees;
@@ -171,6 +179,11 @@ export const execCommand = new Command("exec")
                         }
                     }
                 }
+            }
+
+            // Log verbose info about execution
+            if (options.verbose && parsedCommand.commandName) {
+                logger.verbose(`Executing '${parsedCommand.commandName}'`);
             }
 
             // Execute using the appropriate mode

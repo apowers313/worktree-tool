@@ -33,7 +33,7 @@ describe("Exec Modes Integration", () => {
         }
     });
 
-    it("executes in window mode by default", () => {
+    it("executes in window mode by default (exit mode in CI)", () => {
         // Initialize wtt config
         const config = {
             version: "1.0.0",
@@ -57,7 +57,10 @@ describe("Exec Modes Integration", () => {
             env: {... process.env, WTT_DISABLE_TMUX: "true"},
         });
 
-        expect(result).toContain("Executing command in 1 worktree(s) (mode: window)");
+        // In CI environments, it defaults to exit mode to avoid terminal emulator issues
+        const isCI = process.env.CI ?? process.env.GITHUB_ACTIONS;
+        const expectedMode = isCI ? "exit" : "window";
+        expect(result).toContain(`Executing command in 1 worktree(s) (mode: ${expectedMode})`);
     });
 
     it("respects mode from config", () => {

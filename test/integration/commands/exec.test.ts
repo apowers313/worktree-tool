@@ -169,7 +169,7 @@ describe("exec command integration", () => {
                 stdio: "pipe",
             });
 
-            const result = runWtt(["exec", "test", "feature-c"]);
+            const result = runWtt(["exec", "-w", "feature-c", "test"]);
 
             expect(result.code).not.toBe(0);
             expect(result.stderr).toContain("Worktree(s) not found: feature-c");

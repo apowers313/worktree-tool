@@ -1,4 +1,5 @@
 import {WorktreeConfig} from "../core/types.js";
+import {isCI} from "../platform/detector.js";
 import {WorktreeToolError} from "../utils/errors.js";
 
 export interface ParsedCommand {
@@ -21,6 +22,8 @@ export function parseExecCommand(
     config: WorktreeConfig,
     options: ExecOptions,
 ): ParsedCommand {
+    // Default to exit mode in CI environments to avoid terminal emulator issues
+    const defaultMode = isCI() ? "exit" : "window";
     // Find the -- separator
     const separatorIndex = args.indexOf("--");
 
@@ -59,7 +62,7 @@ export function parseExecCommand(
                 type: "predefined",
                 command: commandConfig,
                 args: args.slice(1),
-                mode: options.mode ?? "window",
+                mode: options.mode ?? defaultMode,
                 commandName: commandName,
             };
         }
@@ -68,7 +71,7 @@ export function parseExecCommand(
             type: "predefined",
             command: commandConfig.command,
             args: args.slice(1),
-            mode: options.mode ?? commandConfig.mode ?? "window",
+            mode: options.mode ?? commandConfig.mode ?? defaultMode,
             commandName: commandName,
         };
     }
