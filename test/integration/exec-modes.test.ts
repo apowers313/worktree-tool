@@ -19,6 +19,7 @@ describe("Exec Modes Integration", () => {
         execSync("git init", {stdio: "ignore"});
         execSync("git config user.email 'test@example.com'", {stdio: "ignore"});
         execSync("git config user.name 'Test User'", {stdio: "ignore"});
+        execSync("git config commit.gpgsign false", {stdio: "ignore"});
 
         // Create initial commit
         writeFileSync("README.md", "# Test Project");
@@ -60,7 +61,12 @@ describe("Exec Modes Integration", () => {
         // In CI environments, it defaults to exit mode to avoid terminal emulator issues
         const isCI = process.env.CI ?? process.env.GITHUB_ACTIONS;
         const expectedMode = isCI ? "exit" : "window";
-        expect(result).toContain(`Executing command in 1 worktree(s) (mode: ${expectedMode})`);
+        // Check for the appropriate mode message
+        if (expectedMode === "exit") {
+            expect(result).toContain("Executing command in 1 worktree(s) (exit mode)");
+        } else {
+            expect(result).toContain("Executing command in 1 worktree(s) (mode: window)");
+        }
     });
 
     it("respects mode from config", () => {

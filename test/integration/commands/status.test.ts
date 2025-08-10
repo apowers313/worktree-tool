@@ -167,9 +167,10 @@ describe("Status Command Integration Tests", () => {
                 });
 
                 // Should only show filtered worktrees
-                expect(output).toContain("[feature-1]");
-                expect(output).toContain("[bugfix-1]");
-                expect(output).not.toContain("[feature-2]");
+                // Allow for potential trailing spaces in the output
+                expect(output).toMatch(/\[feature-1[\s\]]/);
+                expect(output).toMatch(/\[bugfix-1[\s\]]/);
+                expect(output).not.toMatch(/\[feature-2[\s\]]/);
             });
         });
     });
@@ -261,8 +262,8 @@ describe("Status Command Integration Tests", () => {
 
                 // Modify again in main to create conflict
                 await fs.writeFile(path.join(git.path, "conflict.txt"), "main content updated");
-                await repo.add("conflict.txt");
-                await repo.commit("Update conflict file in main");
+                await git.add("conflict.txt");
+                await git.commit("Update conflict file in main");
 
                 // Run status command
                 const output = execSyncWithoutTmux(`node "${WTT_BIN}" status`, {

@@ -24,6 +24,7 @@ describe("Tmux Window Switching Integration", () => {
         // Configure git for commits
         execSync("git config user.email 'test@example.com'", {stdio: "ignore"});
         execSync("git config user.name 'Test User'", {stdio: "ignore"});
+        execSync("git config commit.gpgsign false", {stdio: "ignore"});
     });
 
     afterEach(() => {
@@ -62,6 +63,11 @@ describe("Tmux Window Switching Integration", () => {
             }
             try {
                 execSync("git config user.name 'Test User'", {stdio: "ignore"});
+            } catch {
+                // Ignore if already set
+            }
+            try {
+                execSync("git config commit.gpgsign false", {stdio: "ignore"});
             } catch {
                 // Ignore if already set
             }

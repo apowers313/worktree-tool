@@ -69,7 +69,8 @@ describe("Exec Expanded Features", () => {
             expect(setupLogExists).toBe(true);
 
             const setupLog = await fs.readFile(setupLogPath, "utf-8");
-            expect(setupLog.trim()).toBe("Setup complete");
+            // On Windows, echo might include quotes
+            expect(setupLog.trim().replace(/^'|'$/g, "")).toBe("Setup complete");
 
             // Check that non-autoRun command was NOT executed
             const devLogPath = path.join(git.path, ".worktrees", "feature-test", "dev.log");

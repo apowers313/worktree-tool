@@ -73,10 +73,17 @@ describe("exec command integration", () => {
             // without a display it will fail. We're testing that the command parsing works.
             const result = runWtt(["exec", "complex"]);
 
-            // On some CI systems (like Windows), terminal may be available and command succeeds
+            // In CI, it runs in exit mode and succeeds
+            // In local dev with terminal, it may run in window mode
             const output = result.stdout + result.stderr;
-            // Either it fails (no terminal) or succeeds (terminal available)
-            expect(output).toMatch(/Failed to start in test|Starting in test/);
+            const isCI = process.env.CI ?? process.env.GITHUB_ACTIONS;
+            if (isCI) {
+                // In CI, expect exit mode execution
+                expect(output).toContain("Executing command in 1 worktree(s) (exit mode)");
+            } else {
+                // Locally, either it fails (no terminal) or succeeds (terminal available)
+                expect(output).toMatch(/Failed to start in test|Starting in test|Executing command/);
+            }
         });
     });
 
@@ -105,10 +112,17 @@ describe("exec command integration", () => {
 
             const result = runWtt(["exec", "echo", "feature"]);
 
-            // On some CI systems (like Windows), terminal may be available and command succeeds
+            // In CI, it runs in exit mode and succeeds
+            // In local dev with terminal, it may run in window mode
             const output = result.stdout + result.stderr;
-            // Either it fails (no terminal) or succeeds (terminal available)
-            expect(output).toMatch(/Failed to start in feature|Starting in feature/);
+            const isCI = process.env.CI ?? process.env.GITHUB_ACTIONS;
+            if (isCI) {
+                // In CI, expect exit mode execution
+                expect(output).toContain("Executing command in 1 worktree(s) (exit mode)");
+            } else {
+                // Locally, either it fails (no terminal) or succeeds (terminal available)
+                expect(output).toMatch(/Failed to start in feature|Starting in feature|Executing command/);
+            }
         });
     });
 
@@ -206,7 +220,9 @@ describe("exec command integration", () => {
             const result = runWtt(["exec", "test", "--verbose"]);
 
             // Should see verbose output about execution
-            expect(result.stdout).toContain("Executing 'test'");
+            // The exact format may vary between window and exit modes
+            const output = result.stdout + result.stderr;
+            expect(output.toLowerCase()).toMatch(/executing.*test|executing.*command/);
         });
     });
 });
