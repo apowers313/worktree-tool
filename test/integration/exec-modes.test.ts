@@ -28,7 +28,7 @@ describe("Exec Modes Integration", () => {
         // Create initial commit
         writeFileSync("README.md", "# Test Project");
         execSync("git add .", {stdio: "ignore"});
-        execSync('git commit -m "Initial commit"', {stdio: "ignore"});
+        execSync("git commit -m \"Initial commit\"", {stdio: "ignore"});
     });
 
     afterEach(() => {
