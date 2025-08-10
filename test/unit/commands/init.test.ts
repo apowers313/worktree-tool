@@ -185,9 +185,7 @@ describe("Init Command", () => {
                     tmux: true,
                     autoSort: true,
                     availablePorts: "9000-9099",
-                    commands: {
-                        shell: "bash",
-                    },
+                    commands: {},
                 }),
             );
 
@@ -221,9 +219,7 @@ describe("Init Command", () => {
                     tmux: true,
                     autoSort: true,
                     availablePorts: "9000-9099",
-                    commands: {
-                        shell: "bash",
-                    },
+                    commands: {},
                 }),
             );
         });
@@ -236,9 +232,7 @@ describe("Init Command", () => {
                     tmux: false,
                     autoSort: true,
                     availablePorts: "9000-9099",
-                    commands: {
-                        shell: "bash",
-                    },
+                    commands: {},
                 }),
             );
         });
@@ -257,9 +251,7 @@ describe("Init Command", () => {
                     tmux: false,
                     autoSort: true,
                     availablePorts: "9000-9099",
-                    commands: {
-                        shell: "bash",
-                    },
+                    commands: {},
                 }),
             );
         });
@@ -337,7 +329,7 @@ describe("Init Command", () => {
             // Verify the saved config includes default commands
             const savedConfig = vi.mocked(config.saveConfig).mock.calls[0][0];
             expect(savedConfig).toHaveProperty("commands");
-            expect(savedConfig.commands).toEqual({shell: "bash"});
+            expect(savedConfig.commands).toEqual({});
         });
     });
 

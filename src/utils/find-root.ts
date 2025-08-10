@@ -30,7 +30,8 @@ export async function findProjectRoot(startDir?: string): Promise<string | null>
             const configPath = path.join(currentDir, CONFIG_FILENAME);
             await fs.access(configPath);
             // Config file exists, this is the project root
-            return currentDir;
+            // Resolve to handle Windows short paths
+            return await fs.realpath(currentDir);
         } catch {
             // Config not found in this directory, move up
             currentDir = path.dirname(currentDir);
@@ -41,7 +42,7 @@ export async function findProjectRoot(startDir?: string): Promise<string | null>
     try {
         const configPath = path.join(root, CONFIG_FILENAME);
         await fs.access(configPath);
-        return root;
+        return await fs.realpath(root);
     } catch {
         // Not found anywhere
         return null;
