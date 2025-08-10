@@ -1,3 +1,10 @@
+## [1.2.1](https://github.com/apowers313/worktree-tool/compare/v1.2.0...v1.2.1) (2025-08-10)
+
+
+### Bug Fixes
+
+* fix merge command, other issues from 20250810 code review ([7e2415b](https://github.com/apowers313/worktree-tool/commit/7e2415b20cf1c65ed4809f229120ffc487b228c6))
+
 # [1.2.0](https://github.com/apowers313/worktree-tool/compare/v1.1.0...v1.2.0) (2025-08-10)
 
 
