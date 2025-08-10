@@ -216,7 +216,7 @@ describe("exec command integration", () => {
                 stdio: "pipe",
             });
 
-            const result = runWtt(["exec", "test", "--verbose"]);
+            const result = runWtt(["exec", "test", "--verbose", "--mode", "exit"]);
 
             // Should see verbose output about execution
             // The exact format may vary between window and exit modes

@@ -4,7 +4,7 @@ import {tmpdir} from "os";
 import path from "path";
 import {afterEach, beforeEach, describe, expect, it} from "vitest";
 
-import {getExpectedDefaultMode, getTestEnvironment} from "../helpers/integration-helpers.js";
+import {getTestEnvironment} from "../helpers/integration-helpers.js";
 
 describe("Exec Modes Integration", () => {
     let testDir: string;
@@ -59,18 +59,13 @@ describe("Exec Modes Integration", () => {
 
         // Run exec command
         const wttPath = path.join(__dirname, "..", "..", "dist", "index.js");
-        const result = execSync(`node ${wttPath} exec test`, {
+        const result = execSync(`node ${wttPath} exec test --mode exit`, {
             encoding: "utf8",
             env: getTestEnvironment({WTT_DISABLE_TMUX: "true"}),
         });
 
-        // Check for the appropriate mode message based on environment
-        const expectedMode = getExpectedDefaultMode();
-        if (expectedMode === "exit") {
-            expect(result).toContain("Executing command in 1 worktree(s) (exit mode)");
-        } else {
-            expect(result).toContain("Executing command in 1 worktree(s) (mode: window)");
-        }
+        // Check for exit mode message since we forced it with --mode exit
+        expect(result).toContain("Executing command in 1 worktree(s) (exit mode)");
     });
 
     it("respects mode from config", () => {

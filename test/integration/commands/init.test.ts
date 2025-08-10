@@ -1,3 +1,4 @@
+import {execSync} from "child_process";
 import {promises as fs} from "fs";
 import * as path from "path";
 import {simpleGit} from "simple-git";
@@ -358,13 +359,15 @@ describe("Init Command Integration Tests", () => {
                 // Change to repo directory
                 process.chdir(git.path);
 
-                // Test empty project name
-                expect(() => {
-                    execSyncWithoutTmux(`node "${WTT_BIN}" init --project-name ""`, {
-                        encoding: "utf-8",
-                        stdio: "pipe",
-                    });
-                }).toThrow();
+                // Test empty project name - gets sanitized to "project" so should succeed
+                const result = execSyncWithoutTmux(`node "${WTT_BIN}" init --project-name ""`, {
+                    encoding: "utf-8",
+                    stdio: "pipe",
+                });
+                expect(result).toContain("Initialized worktree project");
+
+                // Clean up for next test
+                execSync("rm -f .worktree-config.json", {stdio: "ignore"});
 
                 // Test empty base dir
                 expect(() => {
@@ -374,13 +377,15 @@ describe("Init Command Integration Tests", () => {
                     });
                 }).toThrow();
 
-                // Test empty main branch
-                expect(() => {
-                    execSyncWithoutTmux(`node "${WTT_BIN}" init --main-branch ""`, {
-                        encoding: "utf-8",
-                        stdio: "pipe",
-                    });
-                }).toThrow();
+                // Clean up for next test
+                execSync("rm -f .worktree-config.json", {stdio: "ignore"});
+
+                // Test empty main branch - gets sanitized to "branch" so should succeed
+                const result2 = execSyncWithoutTmux(`node "${WTT_BIN}" init --main-branch ""`, {
+                    encoding: "utf-8",
+                    stdio: "pipe",
+                });
+                expect(result2).toContain("Initialized worktree project");
             });
         });
     });

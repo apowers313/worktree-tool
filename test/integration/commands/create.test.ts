@@ -107,7 +107,7 @@ describe("Create Command Integration Tests", () => {
                 }
 
                 // Verify sanitized directory was created
-                const worktreePath = path.join(git.path, ".worktrees", "featureadd-new-button");
+                const worktreePath = path.join(git.path, ".worktrees", "feature-add-new-button");
                 const worktreeExists = await fs.access(worktreePath).then(() => true).catch(() => false);
                 expect(worktreeExists).toBe(true);
             });

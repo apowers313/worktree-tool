@@ -72,14 +72,14 @@ describe("End-to-End Full Flow Tests", () => {
                 }
 
                 // Verify second worktree was created with sanitized name
-                const worktree2Path = path.join(git.path, ".worktrees", "featureuser-dashboard");
+                const worktree2Path = path.join(git.path, ".worktrees", "feature-user-dashboard");
                 const worktree2Exists = await fs.access(worktree2Path).then(() => true).catch(() => false);
                 expect(worktree2Exists).toBe(true);
 
                 // Step 5: Verify git branches were created
                 const branchResult = await git.branch();
                 expect(branchResult.all).toContain("feature-auth");
-                expect(branchResult.all).toContain("featureuser-dashboard");
+                expect(branchResult.all).toContain("feature-user-dashboard");
 
                 // Step 6: Verify both worktrees are independent
                 const worktree1Git = simpleGit(worktree1Path);
@@ -88,7 +88,7 @@ describe("End-to-End Full Flow Tests", () => {
 
                 const worktree2Git = simpleGit(worktree2Path);
                 const worktree2Status = await worktree2Git.status();
-                expect(worktree2Status.current).toBe("featureuser-dashboard");
+                expect(worktree2Status.current).toBe("feature-user-dashboard");
             });
         });
 

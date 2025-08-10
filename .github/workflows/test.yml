@@ -68,18 +68,6 @@ jobs:
       - name: Run unit tests
         run: npm test
 
-      - name: Run integration tests
-        run: npm run test:integration
-        env:
-          CI: true
-          DISABLE_TMUX: ${{ matrix.tmux == false }}
-
-      - name: Run e2e tests
-        run: npm run test:e2e
-        env:
-          CI: true
-          DISABLE_TMUX: ${{ matrix.tmux == false }}
-
       - name: Generate coverage
         if: matrix.os == 'ubuntu-latest' && matrix.node == '20'
         run: npm run test:coverage

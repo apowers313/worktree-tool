@@ -30,7 +30,7 @@
     "test:coverage": "vitest run --coverage",
     "test:integration": "vitest run -c vitest.config.integration.ts",
     "test:e2e": "vitest run -c vitest.config.e2e.ts",
-    "test:all": "npm test && npm run test:integration && npm run test:e2e",
+    "test:all": "npm run test:unit && npm run test:integration && npm run test:e2e",
     "test:ci-local": "./scripts/test-ci-locally.sh",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src test && tsc --noEmit",
